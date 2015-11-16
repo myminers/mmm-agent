@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+root = File.expand_path('../..', __FILE__)
+require File.join(root, %w[lib mmm-agent])
+
+# Put your code here
+puts MmmAgent.version
+host = MmmAgent::Host.new
+
+puts host.cpu.human_readable
+puts "Found #{host.gpu.size} GPUs:"
+host.gpu.each do |gpu|
+  puts "#{gpu.model} (#{gpu.uuid})"
+end
+
+host.gpu[0].update_stats
+sleep 1
+host.gpu[0].update_stats
+
+puts host.gpu[0].gpu_clock.avg
+puts host.gpu[0].gpu_clock.min
+puts host.gpu[0].gpu_clock.max
+
