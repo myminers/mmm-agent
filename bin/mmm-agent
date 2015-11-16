@@ -4,15 +4,13 @@ root = File.expand_path('../..', __FILE__)
 require File.join(root, %w[lib mmm-agent])
 
 
-require 'logging'
-log = Logging.logger['mmm-agent']
-log.level = :info
-log.add_appenders Logging.appenders.stdout
-
+require 'syslog/logger'
+log = Syslog::Logger.new 'mmm-agent'
 log.info "Starting version #{MmmAgent.version}"
 
 host = MmmAgent::Host.new
 
+log.error 'just checking'
 log.info "Found #{host.cpu.human_readable}"
 log.info "Found #{host.gpu.size} GPUs:"
 host.gpu.each do |gpu|
