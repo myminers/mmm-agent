@@ -3,23 +3,22 @@
 root = File.expand_path('../..', __FILE__)
 require File.join(root, %w[lib mmm-agent])
 
-
+# Initialize the logger
 require 'syslog/logger'
 log = Syslog::Logger.new 'mmm-agent'
 log.info "Starting version #{MmmAgent.version}"
 
+# Get hardware informations on the host
 host = MmmAgent::Host.new
-
-log.error 'just checking'
 log.info "Found #{host.cpu.human_readable}"
 log.info "Found #{host.gpu.size} GPUs:"
 host.gpu.each do |gpu|
   log.info "#{gpu.model} (#{gpu.uuid})"
 end
 
+# Check we can get GPU clock speeds and store the stats correctly
 host.gpu[0].update_stats
 sleep 1
 host.gpu[0].update_stats
-
 log.info "GPU #0 clock average is #{host.gpu[0].gpu_clock.avg.to_i} Mhz (#{host.gpu[0].gpu_clock.min}/#{host.gpu[0].gpu_clock.max})"
 
