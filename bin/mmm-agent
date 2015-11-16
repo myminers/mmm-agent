@@ -8,6 +8,15 @@ require 'syslog/logger'
 log = Syslog::Logger.new 'mmm-agent'
 log.info "Starting version #{MmmAgent.version}"
 
+# Load the settings
+begin
+  Settings.load!('/etc/mmm-agent.yaml')
+rescue Errno::ENOENT
+  puts "Please copy config/mmm-agent.yaml in /etc and configure it before running this agent."
+  log.error "Missing configuration file, stopping here..."
+  exit
+end
+
 # Get hardware informations on the host
 host = MmmAgent::Host.new
 log.info "Found #{host.cpu.human_readable}"
