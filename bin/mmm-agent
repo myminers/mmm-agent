@@ -19,6 +19,7 @@ end
 
 # Get hardware informations on the host
 host = MmmAgent::Host.new
+log.info "hostname is #{host.hostname}"
 log.info "Found #{host.cpu.human_readable}"
 log.info "Found #{host.gpu.size} GPUs:"
 host.gpu.each do |gpu|

@@ -18,5 +18,10 @@ class MmmAgent::Host
   def has_nvidia_gpus?
     nvidia_gpus_count > 0
   end
+  
+  def hostname
+    require 'socket'
+    Socket.gethostname
+  end
 
 end
