@@ -8,23 +8,14 @@ require 'syslog/logger'
 log = Syslog::Logger.new 'mmm-agent'
 log.info "Starting version #{MmmAgent.version}"
 
-# Load the settings
-begin
-  Settings.load!('/etc/mmm-agent.yaml')
-rescue Errno::ENOENT
-  puts "Please copy config/mmm-agent.yaml in /etc and configure it before running this agent."
-  log.error "Missing configuration file, stopping here..."
-  exit
-end
+# Parse options from the command line
+options = Optparse.parse(ARGV)
+pp options.server_url
+pp options.email
+pp options.token
 
-# Get hardware informations on the host
-host = MmmAgent::Host.new
-log.info "hostname is #{host.hostname}"
-log.info "Found #{host.cpu.human_readable}"
-log.info "Found #{host.gpu.size} GPUs:"
-host.gpu.each do |gpu|
-  log.info "#{gpu.model} (#{gpu.uuid})"
-end
+# Load the host
+host = MmmAgent::Host.new(log, options)
 
 # Check we can get GPU clock speeds and store the stats correctly
 host.gpu[0].update_stats
