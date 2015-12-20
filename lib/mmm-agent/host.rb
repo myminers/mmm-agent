@@ -1,9 +1,5 @@
 class MmmAgent::Host
 
-  require "net/http"
-  require "uri"
-  require "json"
-
   attr_accessor :cpu, :gpu
   
   def initialize(log, options)
