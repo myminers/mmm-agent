@@ -27,6 +27,9 @@ class MmmAgent::Host
     @gpu.each do |gpu|
       log.info "#{gpu.model} (#{gpu.uuid})"
     end
+
+    # Get a connection to the mmm-server
+    @server = MmmAgent::ServerConnection.new(@options)
   end
 
   def nvidia_gpus_count
@@ -41,61 +44,28 @@ class MmmAgent::Host
   def get_rig_url
     return @rig_url if !@rig_url.nil?
   
-    uri = URI.parse("#{@options.server_url}/rigs.json")
-    
-    https = Net::HTTP.new(uri.host,uri.port)
-    https.use_ssl = true if !@options.disable_ssl
-    
-    request = Net::HTTP::Get.new(uri.path)
-    # Pass authentication values in headers to avoid showing them in URL
-    request['X-User-Email'] = @options.email
-    request['X-User-Token'] = @options.token
-    response = https.request(request)
-    
-    #TODO Handle cases that need retries (like no response at all)
-    if response.code == '200'
-      data = JSON.parse(response.body)
-      data.each do |rig|
+    data = @server.get('/rigs.json')
+    if data.code == '200'
+      data.body.each do |rig|
         @rig_url = rig['url'] if rig['hostname'] == @options.hostname
       end
     else
-      puts "Error #{response.code}: #{response.body}"
+      puts "Error #{data.code}: #{data.body}"
       exit
     end
-    
-    if @rig_url.nil? # We need to register the rig on MMM server
-      @log.info 'Registering the rig on mmm-server...'
-      @rig_url = register_rig
-      @log.info "Done. Rig url is: #{@rig_url}"
-    end
-    
+    @rig_url = register_rig if @rig_url.nil?
     return @rig_url
   end
   
   def register_rig
-    newRigJson = {
+    newRig = {
       :hostname => @options.hostname,
       :power_price => 0,
       :power_currency => 'USD'
-    }.to_json
-    uri = URI.parse("#{@options.server_url}/rigs.json")
-    
-    https = Net::HTTP.new(uri.host,uri.port)
-    https.use_ssl = true if !@options.disable_ssl
-    
-    request = Net::HTTP::Post.new(uri.path)
-    request['Content-Type'] = 'application/json'
-    # Pass authentication values in headers to avoid showing them in URL
-    request['X-User-Email'] = @options.email
-    request['X-User-Token'] = @options.token
-    request.body = newRigJson
-    
-    response = https.request(request)
-    
-    #TODO Handle cases that need retries (like no response at all)
-    if response.code == '201' # Created
-      data = JSON.parse(response.body)
-      id = data['rig']['id']['$oid']
+    }
+    data = @server.post('/rigs.json', newRig)
+    if data.code == '201' # Created
+      id = data.body['rig']['id']['$oid']
       return "#{@options.server_url}/rigs/#{id}.json"
     else
       puts "Error #{response.code}: #{response.body}"
