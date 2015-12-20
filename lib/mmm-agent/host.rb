@@ -3,15 +3,20 @@ class MmmAgent::Host
   attr_accessor :cpu, :gpu
   
   def initialize(log, options)
+    # Store for later
     @log = log
     @options = options
     
+    # Get informations about the CPU
     @cpu = MmmAgent::Cpu.new
+    
+    # Get informations about the GPUs (Nvidia only ATM)
     @gpu = Array.new
     (0..nvidia_gpus_count - 1).each do |id|
       @gpu[ id ] = MmmAgent::Gpu.new( id )
     end
     
+    # Log hardware informations
     log.info "Hostname is #{options.hostname}"
     log.info "Found #{@cpu.human_readable}"
     log.info "Found #{@gpu.size} GPUs:"
