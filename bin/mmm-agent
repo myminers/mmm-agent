@@ -15,7 +15,7 @@ options = Optparse.parse(ARGV)
 host = MmmAgent::Host.new(log, options)
 
 # Get mining operation
-host.get_rig_url
+puts host.get_rig_url
 
 # Check we can get GPU clock speeds and store the stats correctly
 host.gpu[0].update_stats
