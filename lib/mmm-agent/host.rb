@@ -44,7 +44,7 @@ class MmmAgent::Host
     uri = URI.parse("#{@options.server_url}/rigs.json")
     
     https = Net::HTTP.new(uri.host,uri.port)
-    https.use_ssl = true # Always, we are not animals
+    https.use_ssl = true if !@options.disable_ssl
     
     request = Net::HTTP::Get.new(uri.path)
     # Pass authentication values in headers to avoid showing them in URL
@@ -81,7 +81,7 @@ class MmmAgent::Host
     uri = URI.parse("#{@options.server_url}/rigs.json")
     
     https = Net::HTTP.new(uri.host,uri.port)
-    https.use_ssl = true # Always, we are not animals
+    https.use_ssl = true if !@options.disable_ssl
     
     request = Net::HTTP::Post.new(uri.path)
     request['Content-Type'] = 'application/json'

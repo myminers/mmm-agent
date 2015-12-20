@@ -15,6 +15,7 @@ class Optparse
     options = OpenStruct.new
     options.server_url = "https://www.multiminermanager.com"
     options.hostname = Socket.gethostname
+    options.disable_ssl = false
 
     opt_parser = OptionParser.new do |opts|
       opts.banner = "Usage: mmm-agent -e EMAIL -t TOKEN [options]"
@@ -39,6 +40,10 @@ class Optparse
       opts.on("-s", "--server SERVER",
               "Defaults to https://www.multiminermanager.com") do |server|
         options.server_url = server
+      end
+      
+      opts.on("-d", "--disable-ssl", "Disable SSL encryption with the server (don't you dare!)") do |disable_ssl|
+        options.disable_ssl = disable_ssl
       end
 
       # No argument, shows at tail.  This will print an options summary.
