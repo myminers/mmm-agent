@@ -2,9 +2,6 @@ class MmmAgent::Host
 
   attr_accessor :cpu, :gpu
   
-  @log = nil
-  @options = nil
-  
   def initialize(log, options)
     @log = log
     @options = options
