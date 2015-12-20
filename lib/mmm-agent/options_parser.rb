@@ -4,7 +4,7 @@ require 'ostruct'
 require 'pp'
 require 'socket'
     
-class Optparse
+class MmmAgent::Optparse
 
   #
   # Return a structure describing the options.

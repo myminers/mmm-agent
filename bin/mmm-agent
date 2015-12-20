@@ -9,7 +9,7 @@ log = Syslog::Logger.new 'mmm-agent'
 log.info "Starting version #{MmmAgent.version}"
 
 # Parse options from the command line
-options = Optparse.parse(ARGV)
+options = MmmAgent::Optparse.parse(ARGV)
 
 # Load the host
 host = MmmAgent::Host.new(log, options)
