@@ -44,14 +44,15 @@ class MmmAgent::Host
     uri = URI.parse("#{@options.server_url}/rigs.json")
     
     https = Net::HTTP.new(uri.host,uri.port)
-    https.use_ssl = true
+    https.use_ssl = true # Always, we are not animals
     
     request = Net::HTTP::Get.new(uri.path)
+    # Pass authentication values in headers to avoid showing them in URL
     request['X-User-Email'] = @options.email
     request['X-User-Token'] = @options.token
-    
     response = https.request(request)
     
+    #TODO Handle cases that need retries (like no response at all)
     if response.code == '200'
       data = JSON.parse(response.body)
       data.each do |rig|
@@ -60,6 +61,10 @@ class MmmAgent::Host
     else
       puts "Error: #{response.body}"
       exit
+    end
+    
+    if @rig_url.nil? # We need to register the rig on MMM server
+      
     end
     
     return @rig_url
