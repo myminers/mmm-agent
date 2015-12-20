@@ -1,5 +1,9 @@
 class MmmAgent::Host
 
+  require "net/http"
+  require "uri"
+  require "json"
+
   attr_accessor :cpu, :gpu
   
   def initialize(log, options)
@@ -32,6 +36,33 @@ class MmmAgent::Host
   
   def has_nvidia_gpus?
     nvidia_gpus_count > 0
+  end
+  
+  def get_rig_url
+    return @rig_url if !@rig_url.nil?
+  
+    uri = URI.parse("#{@options.server_url}/rigs.json")
+    
+    https = Net::HTTP.new(uri.host,uri.port)
+    https.use_ssl = true
+    
+    request = Net::HTTP::Get.new(uri.path)
+    request['X-User-Email'] = @options.email
+    request['X-User-Token'] = @options.token
+    
+    response = https.request(request)
+    
+    if response.code == '200'
+      data = JSON.parse(response.body)
+      data.each do |rig|
+        @rig_url = rig['url'] if rig['hostname'] == @options.hostname
+      end
+    else
+      puts "Error: #{response.body}"
+      exit
+    end
+    
+    return @rig_url
   end
 
 end

@@ -6,9 +6,6 @@ require 'socket'
     
 class Optparse
 
-  CODES = %w[iso-2022-jp shift_jis euc-jp utf8 binary]
-  CODE_ALIASES = { "jis" => "iso-2022-jp", "sjis" => "shift_jis" }
-
   #
   # Return a structure describing the options.
   #
