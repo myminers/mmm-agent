@@ -1,3 +1,5 @@
+require 'uri'
+
 class MmmAgent::Host
 
   attr_accessor :cpu, :gpu
@@ -43,7 +45,10 @@ class MmmAgent::Host
     data = @server.get('/rigs.json')
     if data.code == '200'
       data.body.each do |rig|
-        @rig_url = rig['url'] if rig['hostname'] == @options.hostname
+        if rig['hostname'] == @options.hostname
+          uri = URI::parse(rig['url'])
+          @rig_url = uri.path
+        end
       end
     else
       puts "Error #{data.code}: #{data.body}"
@@ -62,12 +67,11 @@ class MmmAgent::Host
     data = @server.post('/rigs.json', newRig)
     if data.code == '201' # Created
       id = data.body['rig']['id']['$oid']
-      return "#{@options.server_url}/rigs/#{id}.json"
+      return "/rigs/#{id}.json"
     else
       puts "Error #{response.code}: #{response.body}"
       exit
     end
-    
   end
 
 end
