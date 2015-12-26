@@ -1,3 +1,5 @@
+require 'uri'
+
 class MmmAgent::Host
 
   attr_accessor :cpu, :gpu
@@ -16,13 +18,19 @@ class MmmAgent::Host
       @gpu[ id ] = MmmAgent::Gpu.new( id )
     end
     
+    # Create MiningOperation object
+    @mining_operation = MmmAgent::MiningOperation.new(log)
+    
     # Log hardware informations
-    log.info "Hostname is #{options.hostname}"
-    log.info "Found #{@cpu.human_readable}"
-    log.info "Found #{@gpu.size} GPUs:"
+    @log.info "Hostname is #{options.hostname}"
+    @log.info "Found #{@cpu.human_readable}"
+    @log.info "Found #{@gpu.size} GPUs:"
     @gpu.each do |gpu|
       log.info "#{gpu.model} (#{gpu.uuid})"
     end
+
+    # Get a connection to the mmm-server
+    @server = MmmAgent::ServerConnection.new(@options)
   end
 
   def nvidia_gpus_count
@@ -32,6 +40,52 @@ class MmmAgent::Host
   
   def has_nvidia_gpus?
     nvidia_gpus_count > 0
+  end
+  
+  def get_rig_url
+    return @rig_url if !@rig_url.nil?
+  
+    data = @server.get('/rigs.json')
+    if data.code == '200'
+      data.body.each do |rig|
+        if rig['hostname'] == @options.hostname
+          uri = URI::parse(rig['url'])
+          @rig_url = uri.path
+        end
+      end
+    else
+      puts "Error #{data.code}: #{data.body}"
+      exit
+    end
+    @rig_url = register_rig if @rig_url.nil?
+    return @rig_url
+  end
+  
+  def register_rig
+    newRig = {
+      :hostname => @options.hostname,
+      :power_price => 0,
+      :power_currency => 'USD'
+    }
+    data = @server.post('/rigs.json', newRig)
+    if data.code == '201' # Created
+      id = data.body['rig']['id']['$oid']
+      return "/rigs/#{id}.json"
+    else
+      puts "Error #{response.code}: #{response.body}"
+      exit
+    end
+  end
+  
+  def get_rig_mining_operation
+    data = @server.get(get_rig_url)
+    if data.code == '200'
+      @mining_operation.update(data.body['rig']['what_to_mine'])
+      return @mining_operation.readable_command
+    else
+      puts "Error #{response.code}: #{response.body}"
+      exit
+    end
   end
 
 end

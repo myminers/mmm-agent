@@ -9,10 +9,13 @@ log = Syslog::Logger.new 'mmm-agent'
 log.info "Starting version #{MmmAgent.version}"
 
 # Parse options from the command line
-options = Optparse.parse(ARGV)
+options = MmmAgent::Optparse.parse(ARGV)
 
 # Load the host
 host = MmmAgent::Host.new(log, options)
+
+# Get mining operation
+puts host.get_rig_mining_operation
 
 # Check we can get GPU clock speeds and store the stats correctly
 host.gpu[0].update_stats
