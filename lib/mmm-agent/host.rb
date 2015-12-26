@@ -18,6 +18,9 @@ class MmmAgent::Host
       @gpu[ id ] = MmmAgent::Gpu.new( id )
     end
     
+    # Create MiningOperation object
+    @mining_operation = MmmAgent::MiningOperation.new(log)
+    
     # Log hardware informations
     @log.info "Hostname is #{options.hostname}"
     @log.info "Found #{@cpu.human_readable}"
@@ -68,6 +71,17 @@ class MmmAgent::Host
     if data.code == '201' # Created
       id = data.body['rig']['id']['$oid']
       return "/rigs/#{id}.json"
+    else
+      puts "Error #{response.code}: #{response.body}"
+      exit
+    end
+  end
+  
+  def get_rig_mining_operation
+    data = @server.get(get_rig_url)
+    if data.code == '200'
+      @mining_operation.update(data.body['rig']['what_to_mine'])
+      return @mining_operation.readable_command
     else
       puts "Error #{response.code}: #{response.body}"
       exit

@@ -34,6 +34,7 @@ class MmmAgent::Optparse
         options.token = token
       end
       
+      # Optionnal arguments
       opts.separator ""
       opts.separator "Options:"
 
