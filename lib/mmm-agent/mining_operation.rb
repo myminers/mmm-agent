@@ -6,14 +6,14 @@ class MmmAgent::MiningOperation
   end
 
   def update( raw_data )
-    @log.info "Got mining operation: #{raw_data.to_s}"
     if @raw_data == raw_data # No change
       @log.info 'No change in mining command'
     elsif is_valid(raw_data)
       @raw_data = raw_data
       @log.info "Switching to '#{readable_command}'"
     else
-      @log.error "Received invalid command, staying on: '#{readable_command}'"
+      @log.error "Received invalid command, #{raw_data.to_s}"
+      @log.info "Staying on: '#{readable_command}'"
     end
   end
   

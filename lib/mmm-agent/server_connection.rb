@@ -14,30 +14,36 @@ class MmmAgent::ServerConnection
     :delete => Net::HTTP::Delete
   }
 
-  def initialize(options)
+  def initialize(options,log)
     @options = options
+    @log = log
     uri = URI.parse(@options.server_url)
     @http = Net::HTTP.new(uri.host, uri.port)
     @http.use_ssl = true unless @options.disable_ssl
   end
 
-  def get(path)
-    request_json :get, path
+  def get(path, expected_code = '200')
+    request_json :get, path, expected_code
   end
 
-  def post(path, params)
-    request_json :post, path, params
+  def post(path, params, expected_code = '201')
+    request_json :post, path, expected_code, params
   end
 
   private
 
-  def request_json(method, path, params = {})
-    response = request(method, path, params)
-    body = JSON.parse(response.body)
-
-    OpenStruct.new(:code => response.code, :body => body)
-  rescue JSON::ParserError
-    response
+  def request_json(method, path, expected_code, params = {})
+    while true
+      begin
+        response = request(method, path, params)
+        raise "Received HTTP response #{response.code} instead of #{expected_code} (#{path}, #{method})" if expected_code != response.code
+        return JSON.parse(response.body)
+      rescue StandardError => e
+        @log.error "Error contacting mmm-server: #{e.to_s}"
+        @log.info "Retrying in 60 seconds"
+        sleep 60
+      end
+    end        
   end
 
   def request(method, path, params)
@@ -54,7 +60,6 @@ class MmmAgent::ServerConnection
     request['X-User-Email'] = @options.email
     request['X-User-Token'] = @options.token
     
-    #TODO retry until we get a response
     @http.request(request)
   end
 
