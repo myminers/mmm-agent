@@ -30,7 +30,7 @@ class MmmAgent::Host
     end
 
     # Get a connection to the mmm-server
-    @server = MmmAgent::ServerConnection.new(@options)
+    @server = MmmAgent::ServerConnection.new(@options,@log)
   end
 
   def nvidia_gpus_count
@@ -46,46 +46,36 @@ class MmmAgent::Host
     return @rig_url if !@rig_url.nil?
   
     data = @server.get('/rigs.json')
-    if data.code == '200'
-      data.body.each do |rig|
-        if rig['hostname'] == @options.hostname
-          uri = URI::parse(rig['url'])
-          @rig_url = uri.path
-        end
+    data.each do |rig|
+      if rig['hostname'] == @options.hostname
+        uri = URI::parse(rig['url'])
+        @rig_url = uri.path
       end
-    else
-      puts "Error #{data.code}: #{data.body}"
-      exit
     end
     @rig_url = register_rig if @rig_url.nil?
     return @rig_url
   end
   
   def register_rig
+    @log.info "Creating the Rig on mmm-server"
     newRig = {
       :hostname => @options.hostname,
       :power_price => 0,
       :power_currency => 'USD'
     }
     data = @server.post('/rigs.json', newRig)
-    if data.code == '201' # Created
-      id = data.body['rig']['id']['$oid']
-      return "/rigs/#{id}.json"
-    else
-      puts "Error #{response.code}: #{response.body}"
-      exit
-    end
+    id = data['rig']['id']['$oid']
+    "/rigs/#{id}.json"
   end
   
   def get_rig_mining_operation
     data = @server.get(get_rig_url)
-    if data.code == '200'
-      @mining_operation.update(data.body['rig']['what_to_mine'])
-      return @mining_operation.readable_command
-    else
-      puts "Error #{response.code}: #{response.body}"
-      exit
+    if data['rig']['what_to_mine'].nil?
+      @log.info "No mining operation. Go configure your rig on #{@options.server_url}"
+      return "Nothing to do"
     end
+    @mining_operation.update(data['rig']['what_to_mine'])
+    @mining_operation.readable_command
   end
 
 end
