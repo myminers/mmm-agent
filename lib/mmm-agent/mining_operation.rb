@@ -1,8 +1,11 @@
+require 'pty'
+
 class MmmAgent::MiningOperation
 
   def initialize(log)
     @log = log
     @raw_data = Hash.new
+    @pid = nil
   end
 
   def update( raw_data )
@@ -18,8 +21,43 @@ class MmmAgent::MiningOperation
   end
   
   def readable_command
-    "#{miner} -a #{algo} -o #{stratum} -u #{username} -p #{password}"
+    "#{miner} #{algo} #{stratum} #{username} #{password}"
   end
+    
+  def run_miner
+    #Infinite loop: if the miner stops, we restart it
+    @log.info 'plop'
+    while true
+      begin
+        @log.info "Starting the miner..."
+        PTY.spawn( miner, algo, stratum, username, password, '--no-color' ) do |stdout, stdin, pid|
+          begin
+            @pid = pid
+            @log.info "Miner running with PID #{@pid}"
+            stdout.each { |line| @log.info line }
+          rescue Errno::EIO
+            # If the miner stops without closing stdout properly, we get this error.
+            # We don't care about it, we just want to start another process...
+            @log.info "Miner stopped output"
+          rescue Interrupt
+            # We received an interrupt (ctrl-C or kill)
+            # Stop the miner properly and exit
+            @log.info "Stopping the miner"
+            begin
+              Process.kill('INT', @pid)
+              Process.wait(@pid)
+            rescue PTY::ChildExited
+              # Just wait for the process to stop
+            end
+            @log.info "Miner stopped safely, stopping mmm-agent"
+            return
+          end
+        end
+      rescue PTY::ChildExited
+        @log.info "Miner process exited"
+      end
+    end
+  end 
   
   private
   
@@ -36,19 +74,19 @@ class MmmAgent::MiningOperation
   end
   
   def algo
-    @raw_data['algo']
+    "--algo=#{@raw_data['algo']}"
   end
   
   def stratum
-    "stratum+tcp://#{@raw_data['stratum']}"
+    "--url=stratum+tcp://#{@raw_data['stratum']}"
   end
   
   def username
-    @raw_data['username']
+    "--user=#{@raw_data['username']}"
   end
   
   def password
-    @raw_data['password']
+    "--pass=#{@raw_data['password']}"
   end
-  
+ 
 end
