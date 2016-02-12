@@ -35,7 +35,6 @@ class MmmAgent::MiningOperation
     
   def run_miner
     #Infinite loop: if the miner stops, we restart it
-    @log.info 'plop'
     while true
       begin
         @log.info "Starting the miner..."
