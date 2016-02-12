@@ -68,14 +68,32 @@ class MmmAgent::Host
     "/rigs/#{id}.json"
   end
   
-  def get_rig_mining_operation
+  def update_rig_mining_operation
     data = @server.get(get_rig_url)
     if data['rig']['what_to_mine'].nil?
       @log.info "No mining operation. Go configure your rig on #{@options.server_url}"
-      return "Nothing to do"
+      return
     end
     @mining_operation.update(data['rig']['what_to_mine'])
-    @mining_operation.readable_command
+  end
+  
+  def keep_mining_operation_up_to_date
+    while true
+      sleep 10
+      @log.info "Getting best mining operation from server"
+      update_rig_mining_operation
+    end
+  end
+  
+  def start_mining
+    # Get the first mining operation we will be working on
+    update_rig_mining_operation
+    
+    # Keep updating it periodicaly from the server
+    what_to_mine_thread = Thread.new{keep_mining_operation_up_to_date}
+
+    # Run the miner command in the background
+    @mining_operation.run_miner
   end
 
 end
