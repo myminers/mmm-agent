@@ -78,7 +78,12 @@ class MmmAgent::MiningOperation
   end
   
   def miner
-    @raw_data['miner']
+    case @raw_data['algo']
+    when "neoscrypt"
+      "ccminer-djm"
+    else
+      "ccminer-sp"
+    end
   end
   
   def algo
