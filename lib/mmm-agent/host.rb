@@ -79,7 +79,7 @@ class MmmAgent::Host
   
   def keep_mining_operation_up_to_date
     while true
-      sleep 10
+      sleep 600
       @log.info "Getting best mining operation from server"
       update_rig_mining_operation
     end
