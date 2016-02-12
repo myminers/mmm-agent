@@ -14,6 +14,15 @@ class MmmAgent::MiningOperation
     elsif is_valid(raw_data)
       @raw_data = raw_data
       @log.info "Switching to '#{readable_command}'"
+      if !@pid.nil?
+        begin
+          @log.info "Stopping the previous miner..."
+          Process.kill('INT', @pid)
+          Process.wait(@pid)
+        rescue PTY::ChildExited
+          # Just wait for the process to stop
+        end
+      end
     else
       @log.error "Received invalid command, #{raw_data.to_s}"
       @log.info "Staying on: '#{readable_command}'"
@@ -65,8 +74,8 @@ class MmmAgent::MiningOperation
     return true if raw_data['miner'] == 'ccminer' and
       raw_data['algo'] =~ /\A[a-z0-9\-\/]+\z/ and
       raw_data['stratum'] =~ /\A[a-z0-9\-\:\.]+\z/ and
-      raw_data['username'] =~ /\A[a-zA-Z0-9\-]+\z/ and
-      raw_data['password'] =~ /\A[a-zA-Z0-9\-]+\z/
+      raw_data['username'] =~ /\A[a-zA-Z0-9\-\.]+\z/ and
+      raw_data['password'] =~ /\A[a-zA-Z0-9\-\.]+\z/
   end
   
   def miner
