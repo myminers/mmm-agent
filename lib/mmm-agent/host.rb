@@ -15,11 +15,11 @@ class MmmAgent::Host
     # Get informations about the GPUs (Nvidia only ATM)
     @gpu = Array.new
     (0..nvidia_gpus_count - 1).each do |id|
-      @gpu[ id ] = MmmAgent::Gpu.new( id )
+      @gpu[ id ] = MmmAgent::Gpu.new( id, @log )
     end
     
     # Create MiningOperation object
-    @mining_operation = MmmAgent::MiningOperation.new(log)
+    @mining_operation = MmmAgent::MiningOperation.new(log, self)
     
     # Log hardware informations
     @log.info "Hostname is #{options.hostname}"
