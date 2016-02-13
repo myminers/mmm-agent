@@ -85,12 +85,31 @@ class MmmAgent::Host
     end
   end
   
+  def send_statistics_every_minute
+    while true
+      sleep 60
+      hashrate = 0
+      power_draw = 0
+      @gpu.each do |g|
+        hashrate += g.hashrate.avg.to_i
+        power_draw += g.power_draw.avg.to_i
+      end
+      @log.info "Uploading performance statistics: #{hashrate}H/s, #{power_draw}W"
+
+      #TODO Flush stats
+      #TODO send stats to server
+    end
+  end
+  
   def start_mining
     # Get the first mining operation we will be working on
     update_rig_mining_operation
     
     # Keep updating it periodicaly from the server
-    what_to_mine_thread = Thread.new{keep_mining_operation_up_to_date}
+    Thread.new{keep_mining_operation_up_to_date}
+    
+    # Send statistics to the server
+    Thread.new{send_statistics_every_minute}
 
     # Run the miner command in the background
     @mining_operation.run_miner
