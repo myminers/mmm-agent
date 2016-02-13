@@ -20,4 +20,8 @@ class Stat
     @values.min
   end
   
+  def size
+    @values.size
+  end
+  
 end

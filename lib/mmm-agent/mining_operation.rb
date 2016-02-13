@@ -2,9 +2,10 @@ require 'pty'
 
 class MmmAgent::MiningOperation
 
-  def initialize(log)
+  def initialize(log, host)
     @log = log
     @raw_data = Hash.new
+    @host = host
     @pid = nil
   end
 
@@ -42,7 +43,7 @@ class MmmAgent::MiningOperation
           begin
             @pid = pid
             @log.info "Miner running with PID #{@pid}"
-            stdout.each { |line| @log.info line }
+            stdout.each { |line| MmmAgent::MiningOperation::parse(line, @host, @log) }
           rescue Errno::EIO
             # If the miner stops without closing stdout properly, we get this error.
             # We don't care about it, we just want to start another process...
