@@ -1,6 +1,6 @@
 class MmmAgent::Gpu
   
-  attr_accessor :uuid, :model, :gpu_clock, :mem_clock, :gpu_usage, :mem_usage, :fan_speed, :temperature, :power_draw, :hashrate
+  attr_accessor :uuid, :id, :model, :gpu_clock, :mem_clock, :gpu_usage, :mem_usage, :fan_speed, :temperature, :power_draw, :hashrate
   
   def initialize( id, log )
     @id = id
