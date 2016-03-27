@@ -2,9 +2,8 @@ class MmmAgent::Gpu
   
   attr_accessor :uuid, :id, :model, :gpu_clock, :mem_clock, :gpu_usage, :mem_usage, :fan_speed, :temperature, :power_draw, :hashrate
   
-  def initialize( id, log )
+  def initialize( id )
     @id = id
-    @log = log
     data = get_smi_data.split(', ')
     @uuid = data[0].strip
     @model = data[1].strip
