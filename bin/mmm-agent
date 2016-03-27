@@ -3,23 +3,13 @@
 root = File.expand_path('../..', __FILE__)
 require File.join(root, %w[lib mmm-agent])
 
-# Initialize the logger
-require 'syslog/logger'
-log = Syslog::Logger.new 'mmm-agent'
-log.info "Starting version #{MmmAgent.version}"
+Log.notice "Starting version #{MmmAgent.version}"
 
 # Parse options from the command line
 options = MmmAgent::Optparse.parse(ARGV)
 
 # Initialize the host
-host = MmmAgent::Host.new(log, options)
+host = MmmAgent::Host.new(options)
 
 # Keep mining operation up to date
-host.start_mining
-
-# Check we can get GPU clock speeds and store the stats correctly
-#host.gpu[0].update_stats
-#sleep 1
-#host.gpu[0].update_stats
-#log.info "GPU #0 clock average is #{host.gpu[0].gpu_clock.avg.to_i} Mhz (#{host.gpu[0].gpu_clock.min}/#{host.gpu[0].gpu_clock.max})"
-
+#host.start_mining

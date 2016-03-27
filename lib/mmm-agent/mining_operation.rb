@@ -2,8 +2,7 @@ require 'pty'
 
 class MmmAgent::MiningOperation
 
-  def initialize(log, host)
-    @log = log
+  def initialize(host)
     @raw_data = Hash.new
     @host = host
     @pid = nil
@@ -11,13 +10,13 @@ class MmmAgent::MiningOperation
 
   def update( raw_data )
     if @raw_data == raw_data # No change
-      @log.info 'No change in mining command'
+      Log.info 'No change in mining command'
     elsif is_valid(raw_data)
       @raw_data = raw_data
-      @log.info "Switching to '#{readable_command}'"
+      Log.notice "Switching to '#{readable_command}'"
       if !@pid.nil?
         begin
-          @log.info "Stopping the previous miner..."
+          Log.info "Stopping the previous miner..."
           Process.kill('INT', @pid)
           Process.wait(@pid)
         rescue PTY::ChildExited
@@ -25,8 +24,8 @@ class MmmAgent::MiningOperation
         end
       end
     else
-      @log.error "Received invalid command, #{raw_data.to_s}"
-      @log.info "Staying on: '#{readable_command}'"
+      Log.warning "Received invalid command, #{raw_data.to_s}"
+      Log.warning "Staying on: '#{readable_command}'"
     end
   end
   
@@ -38,32 +37,32 @@ class MmmAgent::MiningOperation
     #Infinite loop: if the miner stops, we restart it
     while true
       begin
-        @log.info "Starting the miner..."
+        Log.notice "Starting the miner..."
         PTY.spawn( miner, algo, stratum, username, password, '--no-color' ) do |stdout, stdin, pid|
           begin
             @pid = pid
-            @log.info "Miner running with PID #{@pid}"
-            stdout.each { |line| MmmAgent::MiningOperation::parse(line, @host, @log) }
+            Log.debug "Miner running with PID #{@pid}"
+            stdout.each { |line| MmmAgent::MiningOperation::parse(line, @host) }
           rescue Errno::EIO
             # If the miner stops without closing stdout properly, we get this error.
             # We don't care about it, we just want to start another process...
-            @log.info "Miner stopped output"
+            Log.debug "Miner stopped output"
           rescue Interrupt
             # We received an interrupt (ctrl-C or kill)
             # Stop the miner properly and exit
-            @log.info "Stopping the miner"
+            Log.info "Stopping the miner"
             begin
               Process.kill('INT', @pid)
               Process.wait(@pid)
             rescue PTY::ChildExited
               # Just wait for the process to stop
             end
-            @log.info "Miner stopped safely, stopping mmm-agent"
+            Log.info "Miner stopped safely, stopping mmm-agent"
             return
           end
         end
       rescue PTY::ChildExited
-        @log.info "Miner process exited"
+        Log.debug "Miner process exited"
       end
     end
   end 
