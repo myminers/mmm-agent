@@ -1,6 +1,6 @@
 class MmmAgent::MiningOperation
 
-  def self.parse(line, hostg)
+  def self.parse(line, host)
     case
     when /GPU #(?<gpuid>\d).+, (?<hash>\d+)/ =~ line
       # [2016-02-13 21:54:11] GPU #1: GeForce GTX 970, 12696 (T= 57C F= 56% C=1404/3004)
