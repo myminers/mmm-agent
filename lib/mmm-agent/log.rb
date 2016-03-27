@@ -3,7 +3,7 @@ require 'syslog/logger'
 class Log
   class << self; attr_accessor :level end
   @logger = Syslog::Logger.new 'mmm-agent'
-  @level  = 'info'
+  @level  = 'debug'
   @LEVELS = {
     'debug'   => 1,
     'info'    => 2,

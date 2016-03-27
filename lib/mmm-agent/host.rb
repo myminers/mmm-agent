@@ -90,18 +90,28 @@ class MmmAgent::Host
   
   def send_statistics_every_minute
     while true
-      sleep 60
-      hashrate = 0
-      power_draw = 0
-      @gpu.each do |g|
-        hashrate += g.hashrate.avg.to_i
-        power_draw += g.power_draw.avg.to_i
+      begin
+        sleep 60
+        hashrate = 0
+        power_draw = 0
+        @gpu.each do |g|
+          hashrate += g.hashrate.avg.to_i
+          power_draw += g.power_draw.avg.to_i
+        end
+        algo = @mining_operation.algo_name
+        Log.notice "Mining #{algo} at #{hashrate}H/s, for #{power_draw}W"
+        #TODO send stats to server
+        clear_statistics
+      rescue StandardError => e
+        Log.warning "Error collecting stats: #{e.to_s}"
       end
-      Log.notice "Uploading performance statistics: #{hashrate}H/s, #{power_draw}W"
-
-      #TODO Flush stats
-      #TODO send stats to server
     end
+  end
+  
+  def clear_statistics
+    @gpu.each do |g|
+      g.clear_statistics
+    end    
   end
   
   def start_mining
