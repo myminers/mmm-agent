@@ -37,4 +37,15 @@ class MmmAgent::Gpu
     @hashrate.push( rate )
   end
   
+  def clear_statistics
+    Log.debug 'Clearing statistics'
+    @gpu_clock.clear
+    @mem_clock.clear
+    @gpu_usage.clear
+    @mem_usage.clear
+    @fan_speed.clear
+    @temperature.clear
+    @power_draw.clear
+  end
+  
 end

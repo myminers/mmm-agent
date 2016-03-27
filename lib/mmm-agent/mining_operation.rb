@@ -22,6 +22,7 @@ class MmmAgent::MiningOperation
         rescue PTY::ChildExited
           # Just wait for the process to stop
         end
+        @host.clear_statistics
       end
     else
       Log.warning "Received invalid command, #{raw_data.to_s}"
@@ -67,6 +68,10 @@ class MmmAgent::MiningOperation
     end
   end 
   
+  def algo_name
+    @raw_data['algo'].capitalize
+  end
+ 
   private
   
   def is_valid( raw_data )
@@ -101,5 +106,5 @@ class MmmAgent::MiningOperation
   def password
     "--pass=#{@raw_data['password']}"
   end
- 
+  
 end

@@ -25,4 +25,8 @@ class Stat
     @values.size
   end
   
+  def clear
+    @values.clear
+  end
+  
 end
