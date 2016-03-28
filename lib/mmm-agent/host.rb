@@ -74,12 +74,14 @@ class MmmAgent::Host
       return
     end
     @mining_operation.update(data['rig']['what_to_mine'])
+    uri = URI::parse(data['rig']['hashrate_url'])
+    @hashrate_url = uri.path
   end
   
   def keep_mining_operation_up_to_date
     while true
       begin
-        sleep 600
+        sleep 300
         Log.info "Getting best mining operation from server"
         update_rig_mining_operation
       rescue StandardError => e
@@ -91,7 +93,7 @@ class MmmAgent::Host
   def send_statistics_every_minute
     while true
       begin
-        sleep 60
+        sleep 30
         hashrate = 0
         power_draw = 0
         @gpu.each do |g|
@@ -99,9 +101,17 @@ class MmmAgent::Host
           power_draw += g.power_draw.avg.to_i
         end
         algo = @mining_operation.algo_name
-        Log.notice "Mining #{algo} at #{hashrate}H/s, for #{power_draw}W"
-        #TODO send stats to server
-        clear_statistics
+        
+        if hashrate != 0
+          Log.notice "Mining #{algo} at #{hashrate}H/s, for #{power_draw}W"
+          Log.debug "Sending stats to #{@hashrate_url}"
+          stats = {
+            :rate => hashrate,
+            :power_usage => power_draw
+          }
+          data = @server.put(@hashrate_url, stats)
+          clear_statistics
+        end
       rescue StandardError => e
         Log.warning "Error collecting stats: #{e.to_s}"
       end

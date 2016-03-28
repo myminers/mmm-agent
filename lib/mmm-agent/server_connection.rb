@@ -29,6 +29,10 @@ class MmmAgent::ServerConnection
     request_json :post, path, expected_code, params
   end
 
+  def put(path, params, expected_code = '200')
+    request_json :put, path, expected_code, params
+  end
+
   private
 
   def request_json(method, path, expected_code, params = {})
@@ -50,6 +54,10 @@ class MmmAgent::ServerConnection
     when :get
       request = VERB_MAP[method.to_sym].new(path)
     when :post
+      request = VERB_MAP[method.to_sym].new(path)
+      request['Content-Type'] = 'application/json'
+      request.body = params.to_json
+    when :put
       request = VERB_MAP[method.to_sym].new(path)
       request['Content-Type'] = 'application/json'
       request.body = params.to_json
