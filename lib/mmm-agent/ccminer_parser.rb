@@ -1,4 +1,4 @@
-class MmmAgent::MiningOperation
+class MmmAgent::CcminerParser
 
   def self.parse(line, host)
     case

@@ -38,7 +38,6 @@ class MmmAgent::Gpu
   end
   
   def clear_statistics
-    Log.debug 'Clearing statistics'
     @gpu_clock.clear
     @mem_clock.clear
     @gpu_usage.clear
