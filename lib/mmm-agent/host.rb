@@ -82,6 +82,8 @@ class MmmAgent::Host
     while true
       begin
         sleep 300
+        send_statistics
+        clear_statistics
         Log.info "Getting best mining operation from server"
         update_rig_mining_operation
       rescue StandardError => e
@@ -89,36 +91,18 @@ class MmmAgent::Host
       end
     end
   end
-  
-  def send_statistics_every_minute
-    while true
-      begin
-        sleep 30
-        hashrate = 0
-        power_draw = 0
-        @gpu.each do |g|
-          hashrate += g.hashrate.avg.to_i
-          power_draw += g.power_draw.avg.to_i
-        end
-        algo = @mining_operation.algo_name
-        
-        if hashrate != 0
-          Log.notice "Mining #{algo} at #{hashrate}H/s, for #{power_draw}W"
-          Log.debug "Sending stats to #{@hashrate_url}"
-          stats = {
-            :rate => hashrate,
-            :power_usage => power_draw
-          }
-          data = @server.put(@hashrate_url, stats)
-          clear_statistics
-        end
-      rescue StandardError => e
-        Log.warning "Error collecting stats: #{e.to_s}"
-      end
-    end
+
+  def send_statistics
+    stats = {
+      :rate         => get_hashrate,
+      :power_usage  => get_power_usage
+    }
+    Log.notice "Sending stats: #{stats[:rate]} H/s at #{stats[:power_usage]} W"
+    @server.put(@hashrate_url, stats) unless stats[:rate] == 0
   end
   
   def clear_statistics
+    Log.info "Clearing statistics for the next mining round"
     @gpu.each do |g|
       g.clear_statistics
     end    
@@ -131,11 +115,26 @@ class MmmAgent::Host
     # Keep updating it periodicaly from the server
     Thread.new{keep_mining_operation_up_to_date}
     
-    # Send statistics to the server
-    Thread.new{send_statistics_every_minute}
-
     # Run the miner command in the background
     @mining_operation.run_miner
   end
 
+  private
+
+    def get_hashrate
+      hashrate = 0
+      @gpu.each do |g|
+        hashrate += g.hashrate.avg.to_i
+      end
+      hashrate
+    end
+    
+    def get_power_usage
+      power_draw = 0
+      @gpu.each do |g|
+        power_draw += g.power_draw.avg.to_i
+      end
+      power_draw
+    end
+  
 end

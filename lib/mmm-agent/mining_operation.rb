@@ -22,7 +22,7 @@ class MmmAgent::MiningOperation
         rescue PTY::ChildExited
           # Just wait for the process to stop
         end
-        @host.clear_statistics
+        @host.clear_statistics # Ignore the last stats output, as we are probably changing algorithm
       end
     else
       Log.warning "Received invalid command, #{raw_data.to_s}"
@@ -43,7 +43,7 @@ class MmmAgent::MiningOperation
           begin
             @pid = pid
             Log.debug "Miner running with PID #{@pid}"
-            stdout.each { |line| MmmAgent::MiningOperation::parse(line, @host) }
+            stdout.each { |line| MmmAgent::CcminerParser::parse(line, @host) }
           rescue Errno::EIO
             # If the miner stops without closing stdout properly, we get this error.
             # We don't care about it, we just want to start another process...
