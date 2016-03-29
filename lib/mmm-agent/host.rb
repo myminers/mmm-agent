@@ -75,30 +75,30 @@ class MmmAgent::Host
     end
     @mining_operation.update(data['rig']['what_to_mine'])
     uri = URI::parse(data['rig']['hashrate_url'])
-    @hashrate_url = uri.path
+    return uri.path
   end
   
-  def keep_mining_operation_up_to_date
+  def keep_mining_operation_up_to_date(stats_url)
     while true
       begin
-        sleep 300
-        send_statistics
+        sleep 900
+        send_statistics(stats_url)
         clear_statistics
         Log.info "Getting best mining operation from server"
-        update_rig_mining_operation
+        stats_url = update_rig_mining_operation
       rescue StandardError => e
         Log.warning "Error contacting mmm-server: #{e.to_s}"
       end
     end
   end
 
-  def send_statistics
+  def send_statistics(stats_url)
     stats = {
       :rate         => get_hashrate,
       :power_usage  => get_power_usage
     }
     Log.notice "Sending stats: #{stats[:rate]} H/s at #{stats[:power_usage]} W"
-    @server.put(@hashrate_url, stats) unless stats[:rate] == 0
+    @server.put(stats_url, stats) unless stats[:rate] == 0
   end
   
   def clear_statistics
@@ -110,10 +110,10 @@ class MmmAgent::Host
   
   def start_mining
     # Get the first mining operation we will be working on
-    update_rig_mining_operation
+    stats_url = update_rig_mining_operation
     
     # Keep updating it periodicaly from the server
-    Thread.new{keep_mining_operation_up_to_date}
+    Thread.new{keep_mining_operation_up_to_date(stats_url)}
     
     # Run the miner command in the background
     @mining_operation.run_miner
