@@ -9,6 +9,7 @@ class Stat
   end
   
   def avg
+    return 0 if @values.size == 0
     @values.inject(0.0) { |sum, el| sum + el } / @values.size
   end
   
@@ -18,6 +19,14 @@ class Stat
   
   def min
     @values.min
+  end
+  
+  def size
+    @values.size
+  end
+  
+  def clear
+    @values.clear
   end
   
 end

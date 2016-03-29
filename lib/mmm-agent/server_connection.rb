@@ -14,9 +14,8 @@ class MmmAgent::ServerConnection
     :delete => Net::HTTP::Delete
   }
 
-  def initialize(options,log)
+  def initialize(options)
     @options = options
-    @log = log
     uri = URI.parse(@options.server_url)
     @http = Net::HTTP.new(uri.host, uri.port)
     @http.use_ssl = true unless @options.disable_ssl
@@ -30,6 +29,10 @@ class MmmAgent::ServerConnection
     request_json :post, path, expected_code, params
   end
 
+  def put(path, params, expected_code = '200')
+    request_json :put, path, expected_code, params
+  end
+
   private
 
   def request_json(method, path, expected_code, params = {})
@@ -39,8 +42,8 @@ class MmmAgent::ServerConnection
         raise "Received HTTP response #{response.code} instead of #{expected_code} (#{path}, #{method})" if expected_code != response.code
         return JSON.parse(response.body)
       rescue StandardError => e
-        @log.error "Error contacting mmm-server: #{e.to_s}"
-        @log.info "Retrying in 60 seconds"
+        Log.warning "Error contacting mmm-server: #{e.to_s}"
+        Log.warning "Retrying in 60 seconds"
         sleep 60
       end
     end        
@@ -51,6 +54,10 @@ class MmmAgent::ServerConnection
     when :get
       request = VERB_MAP[method.to_sym].new(path)
     when :post
+      request = VERB_MAP[method.to_sym].new(path)
+      request['Content-Type'] = 'application/json'
+      request.body = params.to_json
+    when :put
       request = VERB_MAP[method.to_sym].new(path)
       request['Content-Type'] = 'application/json'
       request.body = params.to_json
