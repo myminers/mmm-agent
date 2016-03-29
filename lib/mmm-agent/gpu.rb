@@ -45,6 +45,7 @@ class MmmAgent::Gpu
     @fan_speed.clear
     @temperature.clear
     @power_draw.clear
+    @hashrate.clear
   end
   
 end
