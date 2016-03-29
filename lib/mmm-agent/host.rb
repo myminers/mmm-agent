@@ -4,9 +4,8 @@ class MmmAgent::Host
 
   attr_accessor :cpu, :gpu
   
-  def initialize(log, options)
+  def initialize(options)
     # Store for later
-    @log = log
     @options = options
     
     # Get informations about the CPU
@@ -19,18 +18,18 @@ class MmmAgent::Host
     end
     
     # Create MiningOperation object
-    @mining_operation = MmmAgent::MiningOperation.new(log)
+    @mining_operation = MmmAgent::MiningOperation.new(self)
     
     # Log hardware informations
-    @log.info "Hostname is #{options.hostname}"
-    @log.info "Found #{@cpu.human_readable}"
-    @log.info "Found #{@gpu.size} GPUs:"
+    Log.info "Hostname is #{options.hostname}"
+    Log.info "Found #{@cpu.human_readable}"
+    Log.info "Found #{@gpu.size} GPUs:"
     @gpu.each do |gpu|
-      log.info "#{gpu.model} (#{gpu.uuid})"
+      Log.info "#{gpu.model} (#{gpu.uuid})"
     end
 
     # Get a connection to the mmm-server
-    @server = MmmAgent::ServerConnection.new(@options,@log)
+    @server = MmmAgent::ServerConnection.new(@options)
   end
 
   def nvidia_gpus_count
@@ -57,7 +56,7 @@ class MmmAgent::Host
   end
   
   def register_rig
-    @log.info "Creating the Rig on mmm-server"
+    Log.notice "Creating the Rig on mmm-server"
     newRig = {
       :hostname => @options.hostname,
       :power_price => 0,
@@ -71,18 +70,42 @@ class MmmAgent::Host
   def update_rig_mining_operation
     data = @server.get(get_rig_url)
     if data['rig']['what_to_mine'].nil?
-      @log.info "No mining operation. Go configure your rig on #{@options.server_url}"
+      Log.warning "No mining operation. Go configure your rig on #{@options.server_url}"
       return
     end
     @mining_operation.update(data['rig']['what_to_mine'])
+    uri = URI::parse(data['rig']['hashrate_url'])
+    @hashrate_url = uri.path
   end
   
   def keep_mining_operation_up_to_date
     while true
-      sleep 600
-      @log.info "Getting best mining operation from server"
-      update_rig_mining_operation
+      begin
+        sleep 300
+        send_statistics
+        clear_statistics
+        Log.info "Getting best mining operation from server"
+        update_rig_mining_operation
+      rescue StandardError => e
+        Log.warning "Error contacting mmm-server: #{e.to_s}"
+      end
     end
+  end
+
+  def send_statistics
+    stats = {
+      :rate         => get_hashrate,
+      :power_usage  => get_power_usage
+    }
+    Log.notice "Sending stats: #{stats[:rate]} H/s at #{stats[:power_usage]} W"
+    @server.put(@hashrate_url, stats) unless stats[:rate] == 0
+  end
+  
+  def clear_statistics
+    Log.info "Clearing statistics for the next mining round"
+    @gpu.each do |g|
+      g.clear_statistics
+    end    
   end
   
   def start_mining
@@ -90,10 +113,28 @@ class MmmAgent::Host
     update_rig_mining_operation
     
     # Keep updating it periodicaly from the server
-    what_to_mine_thread = Thread.new{keep_mining_operation_up_to_date}
-
+    Thread.new{keep_mining_operation_up_to_date}
+    
     # Run the miner command in the background
     @mining_operation.run_miner
   end
 
+  private
+
+    def get_hashrate
+      hashrate = 0
+      @gpu.each do |g|
+        hashrate += g.hashrate.avg.to_i
+      end
+      hashrate
+    end
+    
+    def get_power_usage
+      power_draw = 0
+      @gpu.each do |g|
+        power_draw += g.power_draw.avg.to_i
+      end
+      power_draw
+    end
+  
 end

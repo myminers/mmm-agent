@@ -1,6 +1,6 @@
 class MmmAgent::Gpu
   
-  attr_accessor :uuid, :model, :gpu_clock, :mem_clock, :gpu_usage, :mem_usage, :fan_speed, :temperature, :power_draw
+  attr_accessor :uuid, :id, :model, :gpu_clock, :mem_clock, :gpu_usage, :mem_usage, :fan_speed, :temperature, :power_draw, :hashrate
   
   def initialize( id )
     @id = id
@@ -15,6 +15,7 @@ class MmmAgent::Gpu
     @fan_speed = Stat.new
     @temperature = Stat.new
     @power_draw = Stat.new
+    @hashrate = Stat.new
   end
   
   def get_smi_data
@@ -30,6 +31,20 @@ class MmmAgent::Gpu
     @fan_speed.push( data[6].strip.to_i )
     @temperature.push( data[7].strip.to_i )
     @power_draw.push( data[8].strip.to_i )  
+  end
+  
+  def store_hashrate( rate )
+    @hashrate.push( rate )
+  end
+  
+  def clear_statistics
+    @gpu_clock.clear
+    @mem_clock.clear
+    @gpu_usage.clear
+    @mem_usage.clear
+    @fan_speed.clear
+    @temperature.clear
+    @power_draw.clear
   end
   
 end
