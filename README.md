@@ -31,23 +31,37 @@ Features
 Examples
 --------
 
-    mmm-agent --api-key [your-api-key]
+    mmm-agent --email <account-email> --token <account-token>
 
 Requirements
 ------------
 
-* Ruby 1.9 or higher
-* CCminer
-* nvidia-smi (optionnal, but gives the power consumption information
-that we need to calculate your most profitable mining option)
+* Ruby 2.0 or higher
+* ccminer-sp and ccminer-djm accessible in the PATH (DJM's will
+be used for neoscrypt)
+* nvidia-smi (gives the power consumption information that we 
+need to calculate your most profitable mining option)
 
 CCMiner has its own set of requirements, like the CUDA Toolkit,
-but this is outside the scope of this documentation...
+but this is outside the scope of this documentation. You should
+already have compiled both versions of ccminer before you try to
+use MultiMinerManager.
 
 Install
 -------
 
-* (sudo) gem install mmm-agent
+    cd /opt
+    (sudo) git clone https://github.com/grout181/mmm-agent.git
+    Add /opt/mmm-agent/bin to your $PATH
+
+Update
+------
+
+The 'master' branch is the only one considered stable. Use other
+branches at your own risks.
+
+    cd /opt
+    (sudo) git pull
 
 Author
 ------
@@ -61,9 +75,9 @@ Contributors:
 License
 -------
 
-(The MIT License) FIXME (different license?)
+(The MIT License)
 
-Copyright (c) 2015 FIXME (author's name)
+Copyright (c) 2015 (grout181)
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
