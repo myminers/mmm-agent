@@ -1,4 +1,5 @@
 require 'uri'
+require 'pp'
 
 class MmmAgent::Host
 
@@ -16,21 +17,23 @@ class MmmAgent::Host
 
     # Register the rig on mmm-server if needed
     @rig_url  = get_rig_url
-    rig_data = get_rig_data
+    @rig_data = get_rig_data
     Log.info "#{options.hostname}'s URL is #{@rig_url}"
 
     # Get informations about the CPU
     # @cpu = MmmAgent::Cpu.new
-    # @cpu.register_if_needed(rig_data, @server)
+    # @cpu.register_if_needed(@rig_data, @server)
     
     # Get informations about the GPUs (Nvidia only ATM)
     @gpu = Array.new
     (0..nvidia_gpus_count - 1).each do |id|
       @gpu[id] = MmmAgent::Gpu.new( id )
-      @gpu[id].register_if_needed(rig_data, @server)
+      @gpu[id].register_if_needed(@rig_data, @server)
     end
 
-    # Reload rig data after every piece of hardware is registered
+    register_miners
+
+    # Reload rig data after everything is registered
     @rig_data = get_rig_data
   end
 
@@ -64,6 +67,35 @@ class MmmAgent::Host
 
   def get_rig_data
     return @server.get(@rig_url)
+  end
+
+  def register_miners
+    # Make sure mmm-server knows about all our miners
+    miners = @server.get(@rig_data['rig']['add_miner']['miner_release_list'])
+    miners.each do |miner|
+      if system("which #{miner['name']} > /dev/null 2>&1")
+        if !registered_miners.include?(miner['name'])
+          Log.notice("#{miner['name']} is missing, registering it on mmm-server")
+          @server.patch(@rig_data['rig']['add_miner']['url'], {'rig' => {'miner_release_ids' => miner['id']}})
+        end
+      end
+    end
+
+    # Make sure we really have the miners mmm-server thinks we have (human error in the web interface)
+    @rig_data['rig']['miners'].each do |miner|
+      if !system("which #{miner['name']} > /dev/null 2>&1")
+        puts "Error: #{miner['name']} is missing. Check your configuration and relaunch mmm-agent."
+        exit
+      end
+    end
+  end
+
+  def registered_miners
+    miners = Array.new
+    @rig_data['rig']['miners'].each do |miner|
+      miners << miner['name']
+    end
+    miners
   end
 
   def update_rig_mining_operation
