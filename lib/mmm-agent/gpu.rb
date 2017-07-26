@@ -5,6 +5,7 @@ class MmmAgent::Gpu
   def initialize( id )
     @id = id
     data = get_smi_data.split(', ')
+    @manufacturer = 'nvidia'
     @uuid = data[0].strip
     @model = data[1].strip
     
@@ -46,6 +47,29 @@ class MmmAgent::Gpu
     @temperature.clear
     @power_draw.clear
     @hashrate.clear
+  end
+
+  def register_if_needed(rig_data, server)
+    rig_data['rig']['hardware'].each do |hardware|
+      return if hardware['hardware_type'] == 'gpu' and
+                hardware['manufacturer']  == @manufacturer and
+                hardware['model']         == @model and
+                hardware['uuid']          == @uuid and
+                hardware['slot']          == @id
+      if hardware['hardware_type'] == 'gpu' and hardware['slot'] == @id
+        server.patch(hardware['remove_hardware']['url'], nil)
+      end
+    end
+
+    Log.notice("GPU##{@id} (#{@model}) is missing, registering it on mmm-server")
+    new_hardware = {
+      :hardware_type  => 'gpu',
+      :manufacturer   => @manufacturer,
+      :model          => @model,
+      :uuid           => @uuid,
+      :slot           => @id,
+    }
+    server.patch(rig_data['rig']['add_hardware']['url'], new_hardware)
   end
   
 end
