@@ -11,6 +11,7 @@ class MmmAgent::ServerConnection
     :get    => Net::HTTP::Get,
     :post   => Net::HTTP::Post,
     :put    => Net::HTTP::Put,
+    :patch  => Net::HTTP::Patch,
     :delete => Net::HTTP::Delete
   }
 
@@ -33,6 +34,9 @@ class MmmAgent::ServerConnection
     request_json :put, path, expected_code, params
   end
 
+  def patch(path, params, expected_code = '200')
+    request_json :patch, path, expected_code, params
+  end
   private
 
   def request_json(method, path, expected_code, params = {})
@@ -58,6 +62,10 @@ class MmmAgent::ServerConnection
       request['Content-Type'] = 'application/json'
       request.body = params.to_json
     when :put
+      request = VERB_MAP[method.to_sym].new(path)
+      request['Content-Type'] = 'application/json'
+      request.body = params.to_json
+    when :patch
       request = VERB_MAP[method.to_sym].new(path)
       request['Content-Type'] = 'application/json'
       request.body = params.to_json
