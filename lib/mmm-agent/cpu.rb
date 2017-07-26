@@ -27,6 +27,9 @@ class MmmAgent::Cpu
                 hardware['model']         == @model and
                 hardware['uuid']          == nil and
                 hardware['slot']          == 0
+      if hardware['hardware_type'] == 'cpu'
+        server.patch(hardware['remove_hardware']['url'], nil)
+      end
     end
 
     Log.notice("CPU#0 (#{@model}) is missing, registering it on mmm-server")
