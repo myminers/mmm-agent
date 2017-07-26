@@ -16,23 +16,22 @@ class MmmAgent::Host
 
     # Register the rig on mmm-server if needed
     @rig_url  = get_rig_url
-    @rig_data = get_rig_data
+    rig_data = get_rig_data
     Log.info "#{options.hostname}'s URL is #{@rig_url}"
 
     # Get informations about the CPU
     @cpu = MmmAgent::Cpu.new
-    @cpu.register_if_needed(@rig_data, @server)
+    @cpu.register_if_needed(rig_data, @server)
     
     # Get informations about the GPUs (Nvidia only ATM)
     @gpu = Array.new
     (0..nvidia_gpus_count - 1).each do |id|
-      @gpu[ id ] = MmmAgent::Gpu.new( id )
+      @gpu[id] = MmmAgent::Gpu.new( id )
+      @gpu[id].register_if_needed(rig_data, @server)
     end
 
-    Log.info "Found #{@gpu.size} GPUs:"
-    @gpu.each do |gpu|
-      Log.info "#{gpu.model} (#{gpu.uuid})"
-    end
+    # Reload rig data after every piece of hardware is registered
+    @rig_data = get_rig_data
   end
 
   def nvidia_gpus_count
