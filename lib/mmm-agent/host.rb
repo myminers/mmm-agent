@@ -20,8 +20,8 @@ class MmmAgent::Host
     Log.info "#{options.hostname}'s URL is #{@rig_url}"
 
     # Get informations about the CPU
-    @cpu = MmmAgent::Cpu.new
-    @cpu.register_if_needed(rig_data, @server)
+    # @cpu = MmmAgent::Cpu.new
+    # @cpu.register_if_needed(rig_data, @server)
     
     # Get informations about the GPUs (Nvidia only ATM)
     @gpu = Array.new
