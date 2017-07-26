@@ -7,29 +7,32 @@ class MmmAgent::Host
   def initialize(options)
     # Store for later
     @options = options
+        
+    # Create MiningOperation object
+    @mining_operation = MmmAgent::MiningOperation.new(self)
     
+    # Get a connection to the mmm-server
+    @server = MmmAgent::ServerConnection.new(@options)
+
+    # Register the rig on mmm-server if needed
+    @rig_url  = get_rig_url
+    @rig_data = get_rig_data
+    Log.info "#{options.hostname}'s URL is #{@rig_url}"
+
     # Get informations about the CPU
     @cpu = MmmAgent::Cpu.new
+    @cpu.register_if_needed(@rig_data, @server)
     
     # Get informations about the GPUs (Nvidia only ATM)
     @gpu = Array.new
     (0..nvidia_gpus_count - 1).each do |id|
       @gpu[ id ] = MmmAgent::Gpu.new( id )
     end
-    
-    # Create MiningOperation object
-    @mining_operation = MmmAgent::MiningOperation.new(self)
-    
-    # Log hardware informations
-    Log.info "Hostname is #{options.hostname}"
-    Log.info "Found #{@cpu.human_readable}"
+
     Log.info "Found #{@gpu.size} GPUs:"
     @gpu.each do |gpu|
       Log.info "#{gpu.model} (#{gpu.uuid})"
     end
-
-    # Get a connection to the mmm-server
-    @server = MmmAgent::ServerConnection.new(@options)
   end
 
   def nvidia_gpus_count
@@ -40,33 +43,30 @@ class MmmAgent::Host
   def has_nvidia_gpus?
     nvidia_gpus_count > 0
   end
-  
+
   def get_rig_url
-    return @rig_url if !@rig_url.nil?
-  
-    data = @server.get('/rigs.json')
-    data.each do |rig|
-      if rig['hostname'] == @options.hostname
-        uri = URI::parse(rig['url'])
-        @rig_url = uri.path
-      end
+    rigs = @server.get('/rigs.json')
+    rigs.each do |rig|
+      return rig['url'] if rig['hostname'] == @options.hostname
     end
-    @rig_url = register_rig if @rig_url.nil?
-    return @rig_url
+    register_rig
   end
   
   def register_rig
-    Log.notice "Creating the Rig on mmm-server"
+    Log.notice "Creating #{@options.hostname} on mmm-server"
     newRig = {
       :hostname => @options.hostname,
       :power_price => 0,
       :power_currency => 'USD'
     }
     data = @server.post('/rigs.json', newRig)
-    id = data['rig']['id']['$oid']
-    "/rigs/#{id}.json"
+    data['rig']['url']
   end
-  
+
+  def get_rig_data
+    return @server.get(@rig_url)
+  end
+
   def update_rig_mining_operation
     data = @server.get(get_rig_url)
     if data['rig']['what_to_mine'].nil?
