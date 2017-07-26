@@ -20,6 +20,8 @@ class MmmAgent::Host
     @rig_data = get_rig_data
     Log.info "#{options.hostname}'s URL is #{@rig_url}"
 
+    set_version_number
+
     # Get informations about the CPU
     # @cpu = MmmAgent::Cpu.new
     # @cpu.register_if_needed(@rig_data, @server)
@@ -46,6 +48,13 @@ class MmmAgent::Host
     nvidia_gpus_count > 0
   end
 
+  def set_version_number
+    if @rig_data['rig']['agent_version'] != MmmAgent.version
+      Log.notice("Looks like mmm-server doesn't know we updated the agent, let's tell them...")
+      @server.patch(@rig_url, {'rig' => {'agent_version' => MmmAgent.version}})
+    end
+  end
+
   def get_rig_url
     rigs = @server.get('/rigs.json')
     rigs.each do |rig|
@@ -57,9 +66,10 @@ class MmmAgent::Host
   def register_rig
     Log.notice "Creating #{@options.hostname} on mmm-server"
     newRig = {
-      :hostname => @options.hostname,
-      :power_price => 0,
-      :power_currency => 'USD'
+      :hostname       => @options.hostname,
+      :power_price    => 0,
+      :power_currency => 'USD',
+      :agent_version  => MmmAgent.version
     }
     data = @server.post('/rigs.json', newRig)
     data['rig']['url']
