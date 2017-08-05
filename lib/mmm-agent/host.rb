@@ -115,6 +115,7 @@ class MmmAgent::Host
       end
       @gpu[slot].mining_operation.update(hardware)
     end
+    data
   end
   
   def keep_mining_operation_up_to_date(stats_url)
@@ -149,13 +150,28 @@ class MmmAgent::Host
   
   def start_mining
     # Get the first mining operation we will be working on
-    update_rig_mining_operations
+    @rig_data = update_rig_mining_operations
+
+    # Start the miners
+    @rig_data['rig']['hardware'].each do |hardware|
+      if hardware['hardware_type'] == 'gpu'
+        slot = hardware['slot'].to_i
+        Thread.new { @gpu[slot].mining_operation.run_miner }
+      end
+    end
+
+    # Monitor miners and keep server up-to-date
+    while true
+      begin
+        sleep 5
+      rescue StandardError => e
+        Log.warning "Error contacting mmm-server: #{e.to_s}"
+      end
+    end
     
     # Keep updating it periodicaly from the server
 #    Thread.new{keep_mining_operation_up_to_date(stats_url)}
     
-    # Run the miner command in the background
-#    @mining_operation.run_miner
   end
 
   private
