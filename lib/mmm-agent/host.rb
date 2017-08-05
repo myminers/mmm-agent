@@ -17,8 +17,8 @@ class MmmAgent::Host
 
     # Register the rig on mmm-server if needed
     @rig_url  = get_rig_url
-    @rig_data = get_rig_data
     Log.info "#{options.hostname}'s URL is #{@rig_url}"
+    @rig_data = get_rig_data
 
     set_version_number
 
@@ -72,7 +72,7 @@ class MmmAgent::Host
       :agent_version  => MmmAgent.version
     }
     data = @server.post('/rigs.json', newRig)
-    data['rig']['url']
+    "/rigs/#{data['rig']['id']}.json"
   end
 
   def get_rig_data
