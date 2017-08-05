@@ -9,9 +9,6 @@ class MmmAgent::Host
     # Store for later
     @options = options
         
-    # Create MiningOperation object
-    @mining_operation = MmmAgent::MiningOperation.new(self)
-    
     # Get a connection to the mmm-server
     @server = MmmAgent::ServerConnection.new(@options)
 
@@ -108,15 +105,16 @@ class MmmAgent::Host
     miners
   end
 
-  def update_rig_mining_operation
+  def update_rig_mining_operations
     data = @server.get(get_rig_url)
-    if data['rig']['what_to_mine'].nil?
-      Log.warning "No mining operation. Go configure your rig on #{@options.server_url}"
-      return
+    data['rig']['hardware'].each do |hardware|
+      slot = hardware['slot']
+      if hardware['what_to_mine'].nil?
+        Log.warning "No mining operation of GPU##{slot}. Go configure your rig on #{@options.server_url}"
+        return
+      end
+      @gpu[slot].mining_operation.update(hardware)
     end
-    @mining_operation.update(data['rig']['what_to_mine'])
-    uri = URI::parse(data['rig']['hashrate_url'])
-    return uri.path
   end
   
   def keep_mining_operation_up_to_date(stats_url)
@@ -151,13 +149,13 @@ class MmmAgent::Host
   
   def start_mining
     # Get the first mining operation we will be working on
-    stats_url = update_rig_mining_operation
+    update_rig_mining_operations
     
     # Keep updating it periodicaly from the server
-    Thread.new{keep_mining_operation_up_to_date(stats_url)}
+#    Thread.new{keep_mining_operation_up_to_date(stats_url)}
     
     # Run the miner command in the background
-    @mining_operation.run_miner
+#    @mining_operation.run_miner
   end
 
   private

@@ -2,9 +2,9 @@ require 'pty'
 
 class MmmAgent::MiningOperation
 
-  def initialize(host)
+  def initialize(device)
     @raw_data = Hash.new
-    @host = host
+    @device = device
     @pid = nil
   end
 
@@ -31,7 +31,17 @@ class MmmAgent::MiningOperation
   end
   
   def readable_command
-    "#{miner} #{algo} #{stratum} #{username} #{password}"
+    m = @raw_data['what_to_mine']
+    mining_command = m['command'].dup
+    mining_command.sub! 'MINER',        m['miner']
+    mining_command.sub! 'DEVICE',       m['device']
+    mining_command.sub! 'ALGO',         m['algo']
+    mining_command.sub! 'STRATUM_HOST', stratum_host( m['stratum'] )
+    mining_command.sub! 'STRATUM_PORT', stratum_port( m['stratum'] )
+    mining_command.sub! 'STRATUM',      m['stratum']
+    mining_command.sub! 'USERNAME',     m['username']
+    mining_command.sub! 'PASSWORD',     m['password']
+    return mining_command
   end
     
   def run_miner
@@ -75,11 +85,40 @@ class MmmAgent::MiningOperation
   private
   
   def is_valid( raw_data )
-    return true if raw_data['miner'] == 'ccminer' and
-      raw_data['algo'] =~ /\A[a-z0-9\-\/]+\z/ and
-      raw_data['stratum'] =~ /\A[a-z0-9\-\:\.]+\z/ and
-      raw_data['username'] =~ /\A[a-zA-Z0-9\-\.]+\z/ and
-      raw_data['password'] =~ /\A[a-zA-Z0-9\-\.]+\z/
+    m = raw_data['what_to_mine']
+    if m['miner'] !~ /\A[a-z0-9\-\.]+\z/
+      Log.warning("Invalid miner name: #{m['miner']}")
+      return false
+    end
+    if !system("which #{m['miner']} > /dev/null 2>&1")
+      Log.warning("Miner missing: #{m['miner']}")
+      return false
+    end
+    if m['device'] !~ /\A[0-9]+\z/
+      Log.warning("Invalid device number: #{m['device']}")
+      return false
+    end
+    if m['algo'] !~ /\A[a-z0-9\-\/]+\z/
+      Log.warning("Invalid algo: #{m['algo']}")
+      return false
+    end
+    if m['stratum'] !~ /\A[a-z0-9\-\:\.]+\z/
+       Log.warning("Invalid stratum: #{m['stratum']}")
+       return false
+    end
+    if m['username'] !~ /\A[a-zA-Z0-9\-\.]+\z/
+       Log.warning("Invalid username: #{m['username']}")
+       return false
+    end
+    if m['password'] !~ /\A[a-zA-Z0-9\-\.=]+\z/
+       Log.warning("Invalid password: #{m['password']}")
+       return false
+    end
+    if m['command'] !~ /\A[a-zA-Z0-9\-\.=_ ]+\z/
+      Log.warning("Invalid command: #{m['command']}")
+      return false
+    end
+    return true
   end
   
   def miner
@@ -105,6 +144,14 @@ class MmmAgent::MiningOperation
   
   def password
     "--pass=#{@raw_data['password']}"
+  end
+
+  def stratum_host( stratum )
+    stratum.split(':')[0]
+  end
+
+  def stratum_port( stratum )
+    stratum.split(':')[1]
   end
   
 end

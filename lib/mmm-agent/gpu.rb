@@ -1,6 +1,6 @@
 class MmmAgent::Gpu
   
-  attr_accessor :uuid, :id, :model, :gpu_clock, :mem_clock, :gpu_usage, :mem_usage, :fan_speed, :temperature, :power_draw, :hashrate
+  attr_accessor :uuid, :id, :model, :gpu_clock, :mem_clock, :gpu_usage, :mem_usage, :fan_speed, :temperature, :power_draw, :hashrate, :mining_operation
   
   def initialize( id )
     @id = id
@@ -9,6 +9,10 @@ class MmmAgent::Gpu
     @uuid = data[0].strip
     @model = data[1].strip
     
+    # Create MiningOperation object
+    @mining_operation = MmmAgent::MiningOperation.new(self)
+    
+    # Create stats objects
     @gpu_clock = Stat.new
     @mem_clock = Stat.new
     @gpu_usage = Stat.new
