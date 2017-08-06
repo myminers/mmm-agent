@@ -47,6 +47,9 @@ class MmmAgent::MiningOperation
         end
       rescue PTY::ChildExited
         Log.debug "GPU##{@device.id} Miner process exited"
+      rescue NoMethodError
+        Log.info "GPU##{@device.id} Nothing to do, waiting..."
+        sleep 10
       rescue Exception => e
         # Ruby swallows exceptions that happen in a thread.
         # That way, they are at least displayed...
@@ -114,10 +117,10 @@ class MmmAgent::MiningOperation
     mining_command.sub! 'STRATUM',      m['stratum']
     mining_command.sub! 'USERNAME',     m['username']
     mining_command.sub! 'PASSWORD',     m['password']
-    if m['miner'].match /\Azcash\-miner\-ewbf/
-      api_port = 42000 + m['device'].to_i
-      mining_command += " --api 127.0.0.1:#{api_port}"
-    end
+#    if m['miner'].match /\Azcash\-miner\-ewbf/
+#      api_port = 42000 + m['device'].to_i
+#      mining_command += " --api 127.0.0.1:#{api_port}"
+#    end
     return mining_command
   end
     
