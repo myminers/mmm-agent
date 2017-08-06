@@ -10,7 +10,7 @@ class MmmAgent::MiningOperation
 
   def update( raw_data )
     if @raw_data == raw_data # No change
-      Log.info 'GPU##{@device.id} No change in mining command'
+      Log.info "GPU##{@device.id} No change in mining command"
     elsif is_valid(raw_data)
       @raw_data = raw_data
       Log.notice "GPU##{@device.id} Switching to '#{readable_command(@raw_data['what_to_mine'])}'"
