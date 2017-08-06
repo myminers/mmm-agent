@@ -47,6 +47,9 @@ class MmmAgent::MiningOperation
         end
       rescue PTY::ChildExited
         Log.debug "GPU##{@device.id} Miner process exited"
+      rescue NoMethodError => e
+        Log.info "GPU##{@device.id} Nothing to do, waiting..."
+        sleep 10
       rescue Exception => e
         # Ruby swallows exceptions that happen in a thread.
         # That way, they are at least displayed...
@@ -60,6 +63,10 @@ class MmmAgent::MiningOperation
   private
   
   def is_valid( raw_data )
+    # We don't trust the values coming from mmm-server:
+    # If the server gets hacked we don't want an attacker to be able to run arbitrary commands on our rig.
+    # Validating each parameter to the minimum set of characters mitigates the risk but does not nullify it.
+    # You should never, under any circumstance, run this as root.
     m = raw_data['what_to_mine']
     if m['miner'] !~ /\A[a-z0-9\-\.]+\z/
       Log.warning("GPU##{@device.id} Invalid miner name: #{m['miner']}")
@@ -89,7 +96,7 @@ class MmmAgent::MiningOperation
        Log.warning("GPU##{@device.id} Invalid password: #{m['password']}")
        return false
     end
-    if m['command'] !~ /\AMINER [a-zA-Z0-9\-\.\/=_ ]+\z/
+    if m['command'] !~ /\AMINER [a-zA-Z0-9\-\.\/\+\:=_ ]+\z/
       Log.warning("GPU##{@device.id} Invalid command: #{m['command']}")
       return false
     end
@@ -114,10 +121,10 @@ class MmmAgent::MiningOperation
     mining_command.sub! 'STRATUM',      m['stratum']
     mining_command.sub! 'USERNAME',     m['username']
     mining_command.sub! 'PASSWORD',     m['password']
-    if m['miner'].match /\Azcash\-miner\-ewbf/
-      api_port = 42000 + m['device'].to_i
-      mining_command += " --api 127.0.0.1:#{api_port}"
-    end
+#    if m['miner'].match /\Azcash\-miner\-ewbf/
+#      api_port = 42000 + m['device'].to_i
+#      mining_command += " --api 127.0.0.1:#{api_port}"
+#    end
     return mining_command
   end
     
