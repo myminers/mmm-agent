@@ -160,18 +160,21 @@ class MmmAgent::Host
       end
     end
 
-    # Monitor miners and keep server up-to-date
+    # Monitor miners and keep in sync with the server
     while true
       begin
-        sleep 5
+        sleep 60
+        @rig_data['rig']['hardware'].each do |hardware|
+          if hardware['hardware_type'] == 'gpu'
+            slot = hardware['slot'].to_i
+            @gpu[slot].send_statistics( @server, hardware['mining_log']['url'] )
+          end
+        end
+        @rig_data = update_rig_mining_operations
       rescue StandardError => e
         Log.warning "Error contacting mmm-server: #{e.to_s}"
       end
     end
-    
-    # Keep updating it periodicaly from the server
-#    Thread.new{keep_mining_operation_up_to_date(stats_url)}
-    
   end
 
   private
