@@ -9,16 +9,13 @@ class MmmAgent::Host
     # Store for later
     @options = options
         
-    # Create MiningOperation object
-    @mining_operation = MmmAgent::MiningOperation.new(self)
-    
     # Get a connection to the mmm-server
     @server = MmmAgent::ServerConnection.new(@options)
 
     # Register the rig on mmm-server if needed
     @rig_url  = get_rig_url
-    @rig_data = get_rig_data
     Log.info "#{options.hostname}'s URL is #{@rig_url}"
+    @rig_data = get_rig_data
 
     set_version_number
 
@@ -72,7 +69,7 @@ class MmmAgent::Host
       :agent_version  => MmmAgent.version
     }
     data = @server.post('/rigs.json', newRig)
-    data['rig']['url']
+    "/rigs/#{data['rig']['id']}.json"
   end
 
   def get_rig_data
@@ -108,15 +105,17 @@ class MmmAgent::Host
     miners
   end
 
-  def update_rig_mining_operation
+  def update_rig_mining_operations
     data = @server.get(get_rig_url)
-    if data['rig']['what_to_mine'].nil?
-      Log.warning "No mining operation. Go configure your rig on #{@options.server_url}"
-      return
+    data['rig']['hardware'].each do |hardware|
+      slot = hardware['slot']
+      if hardware['what_to_mine'].nil?
+        Log.warning "No mining operation of GPU##{slot}. Go configure your rig on #{@options.server_url}"
+        return
+      end
+      @gpu[slot].mining_operation.update(hardware)
     end
-    @mining_operation.update(data['rig']['what_to_mine'])
-    uri = URI::parse(data['rig']['hashrate_url'])
-    return uri.path
+    data
   end
   
   def keep_mining_operation_up_to_date(stats_url)
@@ -151,13 +150,31 @@ class MmmAgent::Host
   
   def start_mining
     # Get the first mining operation we will be working on
-    stats_url = update_rig_mining_operation
-    
-    # Keep updating it periodicaly from the server
-    Thread.new{keep_mining_operation_up_to_date(stats_url)}
-    
-    # Run the miner command in the background
-    @mining_operation.run_miner
+    @rig_data = update_rig_mining_operations
+
+    # Start the miners
+    @rig_data['rig']['hardware'].each do |hardware|
+      if hardware['hardware_type'] == 'gpu'
+        slot = hardware['slot'].to_i
+        Thread.new { @gpu[slot].mining_operation.run_miner }
+      end
+    end
+
+    # Monitor miners and keep in sync with the server
+    while true
+      begin
+        sleep 60
+        @rig_data['rig']['hardware'].each do |hardware|
+          if hardware['hardware_type'] == 'gpu'
+            slot = hardware['slot'].to_i
+            @gpu[slot].send_statistics( @server, hardware['mining_log']['url'] )
+          end
+        end
+        @rig_data = update_rig_mining_operations
+      rescue StandardError => e
+        Log.warning "Error contacting mmm-server: #{e.to_s}"
+      end
+    end
   end
 
   private

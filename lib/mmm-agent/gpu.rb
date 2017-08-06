@@ -1,6 +1,6 @@
 class MmmAgent::Gpu
   
-  attr_accessor :uuid, :id, :model, :gpu_clock, :mem_clock, :gpu_usage, :mem_usage, :fan_speed, :temperature, :power_draw, :hashrate
+  attr_accessor :uuid, :id, :model, :hashrate, :mining_operation
   
   def initialize( id )
     @id = id
@@ -9,14 +9,19 @@ class MmmAgent::Gpu
     @uuid = data[0].strip
     @model = data[1].strip
     
-    @gpu_clock = Stat.new
-    @mem_clock = Stat.new
-    @gpu_usage = Stat.new
-    @mem_usage = Stat.new
-    @fan_speed = Stat.new
-    @temperature = Stat.new
-    @power_draw = Stat.new
-    @hashrate = Stat.new
+    # Create MiningOperation object
+    @mining_operation = MmmAgent::MiningOperation.new(self)
+    
+    # Create stats objects
+    @gpu_clock        = nil
+    @mem_clock        = nil
+    @gpu_usage        = nil
+    @mem_usage        = nil
+    @fan_speed        = nil
+    @temperature      = nil
+    @power_usage      = nil
+    @hashrate         = nil
+    @throttle_reason  = nil
   end
   
   def get_smi_data
@@ -25,28 +30,26 @@ class MmmAgent::Gpu
   
   def update_stats
     data = get_smi_data.split(', ')
-    @gpu_clock.push( data[2].strip.to_i )
-    @mem_clock.push( data[3].strip.to_i )
-    @gpu_usage.push( data[4].strip.to_i )
-    @mem_usage.push( data[5].strip.to_i )
-    @fan_speed.push( data[6].strip.to_i )
-    @temperature.push( data[7].strip.to_i )
-    @power_draw.push( data[8].strip.to_i )  
-  end
-  
-  def store_hashrate( rate )
-    @hashrate.push( rate )
+    @gpu_clock        = data[2].strip.to_i
+    @mem_clock        = data[3].strip.to_i
+    @gpu_usage        = data[4].strip.to_i
+    @mem_usage        = data[5].strip.to_i
+    @fan_speed        = data[6].strip.to_i
+    @temperature      = data[7].strip.to_i
+    @power_usage      = data[8].strip.to_i  
+    @throttle_reason  = data[9].strip
   end
   
   def clear_statistics
-    @gpu_clock.clear
-    @mem_clock.clear
-    @gpu_usage.clear
-    @mem_usage.clear
-    @fan_speed.clear
-    @temperature.clear
-    @power_draw.clear
-    @hashrate.clear
+    @gpu_clock        = nil
+    @mem_clock        = nil
+    @gpu_usage        = nil
+    @mem_usage        = nil
+    @fan_speed        = nil
+    @temperature      = nil
+    @power_usage      = nil
+    @hashrate         = nil
+    @throttle_reason  = nil
   end
 
   def register_if_needed(rig_data, server)
@@ -70,6 +73,22 @@ class MmmAgent::Gpu
       :slot           => @id,
     }
     server.patch(rig_data['rig']['add_hardware']['url'], new_hardware)
+  end
+
+  def send_statistics(server, url)
+    update_stats
+    Log.info "Sending stats to mmm-server: rate:#{@hashrate} power:#{@power_usage} temp: #{@temperature} fan:#{@fan_speed} gpu:#{@gpu_usage} mem:#{@mem_usage} throttle:#{@throttle_reason}"
+    mining_log = {
+      :rate             => @hashrate,
+      :power_usage      => @power_usage,
+      :temperature      => @temperature,
+      :fan_speed        => @fan_speed,
+      :gpu_usage        => @gpu_usage,
+      :mem_usage        => @mem_usage,
+      :throttle_reason  => @throttle_reason
+    }
+    server.patch(url, mining_log)
+    clear_statistics
   end
   
 end

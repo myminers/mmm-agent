@@ -12,4 +12,4 @@ options = MmmAgent::Optparse.parse(ARGV)
 host = MmmAgent::Host.new(options)
 
 # Keep mining operation up to date
-#host.start_mining
+host.start_mining
