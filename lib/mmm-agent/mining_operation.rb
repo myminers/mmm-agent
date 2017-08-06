@@ -47,7 +47,7 @@ class MmmAgent::MiningOperation
         end
       rescue PTY::ChildExited
         Log.debug "GPU##{@device.id} Miner process exited"
-      rescue NoMethodError
+      rescue NoMethodError => e
         Log.info "GPU##{@device.id} Nothing to do, waiting..."
         sleep 10
       rescue Exception => e
@@ -92,7 +92,7 @@ class MmmAgent::MiningOperation
        Log.warning("GPU##{@device.id} Invalid password: #{m['password']}")
        return false
     end
-    if m['command'] !~ /\AMINER [a-zA-Z0-9\-\.\/=_ ]+\z/
+    if m['command'] !~ /\AMINER [a-zA-Z0-9\-\.\/\+\:=_ ]+\z/
       Log.warning("GPU##{@device.id} Invalid command: #{m['command']}")
       return false
     end
