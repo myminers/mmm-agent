@@ -48,6 +48,8 @@ class MmmAgent::MiningOperation
       rescue PTY::ChildExited
         Log.debug "GPU##{@device.id} Miner process exited"
       rescue Exception => e
+        # Ruby swallows exceptions that happen in a thread.
+        # That way, they are at least displayed...
         puts "Thread terminated with exception: #{e.message}"
         puts e.backtrace.map {|line| "  #{line}"}
         raise e
