@@ -9,7 +9,7 @@ class MmmAgent::MinerParser
       # GPU0: 410 Sol
       gpu.hashrate = $1.to_i
     else
-      Log.info "Miner output: #{line}"
+      Log.info "GPU##{gpu['slot']} Miner output: #{line}"
     end
   end
 
