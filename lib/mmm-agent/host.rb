@@ -110,8 +110,8 @@ class MmmAgent::Host
     data['rig']['hardware'].each do |hardware|
       slot = hardware['slot']
       if hardware['what_to_mine'].nil?
-        Log.warning "No mining operation of GPU##{slot}. Go configure your rig on #{@options.server_url}"
-        return
+        Log.warning "No mining operation for GPU##{slot}. Go configure your rig on #{@options.server_url}"
+        return data
       end
       @gpu[slot].mining_operation.update(hardware)
     end
@@ -165,7 +165,7 @@ class MmmAgent::Host
       begin
         sleep 60
         @rig_data['rig']['hardware'].each do |hardware|
-          if hardware['hardware_type'] == 'gpu'
+          if hardware['hardware_type'] == 'gpu' and !hardware['mining_log'].nil?
             slot = hardware['slot'].to_i
             @gpu[slot].send_statistics( @server, hardware['mining_log']['url'] )
           end
@@ -173,6 +173,7 @@ class MmmAgent::Host
         @rig_data = update_rig_mining_operations
       rescue StandardError => e
         Log.warning "Error contacting mmm-server: #{e.to_s}"
+        Log.warning e.backtrace.map {|line| "  #{line}"}
       end
     end
   end
