@@ -63,6 +63,10 @@ class MmmAgent::MiningOperation
   private
   
   def is_valid( raw_data )
+    # We don't trust the values coming from mmm-server:
+    # If the server gets hacked we don't want an attacker to be able to run arbitrary commands on our rig.
+    # Validating each parameter to the minimum set of characters mitigates the risk but does not nullify it.
+    # You should never, under any circumstance, run this as root.
     m = raw_data['what_to_mine']
     if m['miner'] !~ /\A[a-z0-9\-\.]+\z/
       Log.warning("GPU##{@device.id} Invalid miner name: #{m['miner']}")
