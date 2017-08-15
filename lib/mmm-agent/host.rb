@@ -47,7 +47,8 @@ class MmmAgent::Host
     # Start the miners
     threads = []
     @gpu.each do |gpu|
-      threads << Thread.new { gpu.start_mining }
+      threads << Thread.new { gpu.start_miner }
+      threads << Thread.new { gpu.monitor_miner }
     end
 
     # Wait for the threads to exit
