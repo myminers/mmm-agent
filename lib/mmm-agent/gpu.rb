@@ -27,14 +27,37 @@ class MmmAgent::Gpu
     @throttle_reason  = nil
   end
 
+  def start_mining
+    # Get the first mining operation we will be working on
+    @mining_operation.update( get_what_to_mine )
+
+    # Start the miner
+    Thread.new { @mining_operation.run_miner }
+
+    # Monitor the miner and keep in sync with mmm-server
+    while true
+			begin
+        sleep 60
+				# Send statistics every minute, no matter what
+				send_statistics
+
+				# If the mining_operation has run for the recommended duration, check if there is a better one
+				@mining_operation.running_time += 1
+				if @mining_operation.running_time >= @mining_operation.duration
+					@mining_operation.running_time = 0
+					@mining_operation.update( get_what_to_mine )
+				end
+      rescue StandardError => e
+        Log.warning "Exception: #{e.to_s}"
+        Log.warning e.backtrace.map {|line| "  #{line}"}
+      end
+    end
+  end
+
   def set_url(rig_data)
     rig_data['rig']['hardware'].each do |hardware|
       @url = hardware['url'] if hardware['slot'] == @id
     end
-  end
-
-  def update_mining_operation
-    @mining_operation.update( get_what_to_mine )
   end
 
   def get_what_to_mine
