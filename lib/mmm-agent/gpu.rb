@@ -1,9 +1,12 @@
 class MmmAgent::Gpu
   
-  attr_accessor :uuid, :id, :model, :hashrate, :mining_operation
+  attr_accessor :uuid, :id, :model, :hashrate, :mining_operation, :url
   
-  def initialize( id )
+  def initialize( id, server, options )
     @id = id
+    @server = server
+    @options = options
+    @url = nil
     data = get_smi_data.split(', ')
     @manufacturer = 'nvidia'
     @uuid = data[0].strip
@@ -22,6 +25,28 @@ class MmmAgent::Gpu
     @power_usage      = nil
     @hashrate         = nil
     @throttle_reason  = nil
+  end
+
+  def set_url(rig_data)
+    rig_data['rig']['hardware'].each do |hardware|
+      @url = hardware['url'] if hardware['slot'] == @id
+    end
+  end
+
+  def update_mining_operation
+    @mining_operation.update( get_what_to_mine )
+  end
+
+  def get_what_to_mine
+    while true
+      data = @server.get(@url)
+      if data['rig_hardware'].nil?
+        Log.warning "No mining operation for GPU##{@id}. Go configure your rig on #{@options.server_url}"
+        sleep 60
+      else
+        return data['rig_hardware']
+      end
+    end
   end
   
   def get_smi_data
@@ -52,18 +77,22 @@ class MmmAgent::Gpu
     @throttle_reason  = nil
   end
 
-  def register_if_needed(rig_data, server)
+  def register_if_needed(rig_data)
     rig_data['rig']['hardware'].each do |hardware|
+      # Stop here if the server knows about me
       return if hardware['hardware_type'] == 'gpu' and
                 hardware['manufacturer']  == @manufacturer and
                 hardware['model']         == @model and
                 hardware['uuid']          == @uuid and
                 hardware['slot']          == @id
+
+      # If a different GPU is declared on my slot, remove it
       if hardware['hardware_type'] == 'gpu' and hardware['slot'] == @id
-        server.patch(hardware['remove_hardware']['url'], nil)
+        @server.patch(hardware['remove_hardware']['url'], nil)
       end
     end
 
+    # Register myself if the server doesn't know about me
     Log.notice("GPU##{@id} (#{@model}) is missing, registering it on mmm-server")
     new_hardware = {
       :hardware_type  => 'gpu',
@@ -72,10 +101,10 @@ class MmmAgent::Gpu
       :uuid           => @uuid,
       :slot           => @id,
     }
-    server.patch(rig_data['rig']['add_hardware']['url'], new_hardware)
+    @server.patch(rig_data['rig']['add_hardware']['url'], new_hardware)
   end
 
-  def send_statistics(server, url)
+  def send_statistics
     update_stats
     Log.info "Sending stats to mmm-server: rate:#{@hashrate} power:#{@power_usage} temp: #{@temperature} fan:#{@fan_speed} gpu:#{@gpu_usage} mem:#{@mem_usage} throttle:#{@throttle_reason}"
     mining_log = {
@@ -87,7 +116,7 @@ class MmmAgent::Gpu
       :mem_usage        => @mem_usage,
       :throttle_reason  => @throttle_reason
     }
-    server.patch(url, mining_log)
+    @server.patch(@mining_operation.log_url, mining_log)
     clear_statistics
   end
   
