@@ -2,18 +2,25 @@ require 'pty'
 
 class MmmAgent::MiningOperation
 
+  attr_accessor :log_url, :running_time, :duration
+
   def initialize(device)
     @raw_data = Hash.new
     @device = device
     @pid = nil
+    @log_url = nil
+    @running_time = 0
+    @duration = 0
   end
 
   def update( raw_data )
     if @raw_data == raw_data # No change
-      Log.info "GPU##{@device.id} No change in mining command"
+      Log.info "GPU##{@device.id} No change in mining command, keep mining for #{@duration} more minutes"
     elsif is_valid(raw_data)
       @raw_data = raw_data
-      Log.notice "GPU##{@device.id} Switching to '#{readable_command(@raw_data['what_to_mine'])}'"
+      @log_url = raw_data['mining_log']['url']
+      @duration = raw_data['what_to_mine']['duration'].to_i
+      Log.notice "GPU##{@device.id} Switching to '#{readable_command(@raw_data['what_to_mine'])}' for #{@duration} minutes"
       if !@pid.nil?
         begin
           Log.info "GPU##{@device.id} Stopping the previous miner..."
