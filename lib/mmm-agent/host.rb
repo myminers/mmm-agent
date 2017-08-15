@@ -45,14 +45,31 @@ class MmmAgent::Host
   
   def start_mining
     # Start the miners
-    threads = []
     @gpu.each do |gpu|
-      threads << Thread.new { gpu.start_miner }
-      threads << Thread.new { gpu.monitor_miner }
+      Thread.new { gpu.start_miner }
     end
 
-    # Wait for the threads to exit
-    threads.each(&:join)
+    # Monitor the miners and keep in sync with mmm-server
+    while true
+      begin
+        sleep 60
+				@gpu.each do |gpu|
+					# Send statistics every minute, no matter what
+					gpu.send_statistics
+
+					# If the mining_operation has run for the recommended duration, check if there is a better one
+					gpu.mining_operation.running_time += 1
+					if gpu.mining_operation.running_time >= gpu.mining_operation.duration
+						gpu.mining_operation.running_time = 0
+						gpu.mining_operation.update( get_what_to_mine )
+					end
+				end
+      rescue StandardError => e
+        Log.warning "Exception: #{e.to_s}"
+        Log.warning e.backtrace.map {|line| "  #{line}"}
+      end
+    end
+
   end
 
   private
