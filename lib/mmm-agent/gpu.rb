@@ -27,14 +27,6 @@ class MmmAgent::Gpu
     @throttle_reason  = nil
   end
 
-  def start_miner
-    # Get the first mining operation we will be working on
-    @mining_operation.update( get_what_to_mine )
-
-    # Start the miner
-    @mining_operation.run_miner
-  end
-
   def set_url(rig_data)
     rig_data['rig']['hardware'].each do |hardware|
       @url = hardware['url'] if hardware['slot'] == @id

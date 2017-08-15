@@ -46,7 +46,8 @@ class MmmAgent::Host
   def start_mining
     # Start the miners
     @gpu.each do |gpu|
-      Thread.new { gpu.start_miner }
+      gpu.mining_operation.update( gpu.get_what_to_mine )
+      Thread.new { gpu.mining_operation.run_miner }
     end
 
     # Monitor the miners and keep in sync with mmm-server
