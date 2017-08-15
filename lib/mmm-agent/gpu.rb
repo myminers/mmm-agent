@@ -27,13 +27,15 @@ class MmmAgent::Gpu
     @throttle_reason  = nil
   end
 
-  def start_mining
+  def start_miner
     # Get the first mining operation we will be working on
     @mining_operation.update( get_what_to_mine )
 
     # Start the miner
-    Thread.new { @mining_operation.run_miner }
+    @mining_operation.run_miner
+  end
 
+  def monitor_miner
     # Monitor the miner and keep in sync with mmm-server
     while true
 			begin
