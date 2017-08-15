@@ -1,0 +1,14 @@
+[Unit]
+Description=MMM Agent
+After=network.target
+
+[Service]
+Type=simple
+User=YourUser
+WorkingDirectory=/opt/mmm-agent
+ExecStart=/opt/mmm-agent/bin/mmm-agent --email EmailAddressOfYourAccount --token YourApiToken
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+
