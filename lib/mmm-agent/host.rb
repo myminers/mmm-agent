@@ -62,7 +62,7 @@ class MmmAgent::Host
 					gpu.mining_operation.running_time += 1
 					if gpu.mining_operation.running_time >= gpu.mining_operation.duration
 						gpu.mining_operation.running_time = 0
-						gpu.mining_operation.update( get_what_to_mine )
+						gpu.mining_operation.update( gpu.get_what_to_mine )
 					end
 				end
       rescue StandardError => e
