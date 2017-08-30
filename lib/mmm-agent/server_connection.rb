@@ -5,7 +5,7 @@ require "json"
 
 class MmmAgent::ServerConnection
 
-  ENDPOINT = "https://www.multiminermanager.com"
+  ENDPOINT = "https://myminers.net"
 
   VERB_MAP = {
     :get    => Net::HTTP::Get,
