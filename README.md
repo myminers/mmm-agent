@@ -1,8 +1,8 @@
 mmm-agent
 ===========
 
-This program is the agent part of MultiMinerManager. It contacts 
-multiminermanager.com every 15 minutes to know what it should be
+This program is the agent part of MyMiners. It contacts 
+myminers.net every few minutes to know what it should be
 mining. Then, it starts the miner(s) and analyses its output to 
 make sure everything is OK. 
 
@@ -22,11 +22,10 @@ check it out...
 Features
 --------
 
-* Runs ccminer instances in the background
-* Monitors ccminer's output to check everything is OK
+* Runs miner instances in the background
+* Monitors miner output to check everything is OK
 * Monitors nvidia-smi output (temperatures, power usage, etc...)
 * Uploads statistics to the server
-* Automatically restarts the miner a set intervals
 
 Examples
 --------
@@ -42,17 +41,21 @@ be used for neoscrypt)
 * nvidia-smi (gives the power consumption information that we 
 need to calculate your most profitable mining option)
 
-CCMiner has its own set of requirements, like the CUDA Toolkit,
+Miners have their own set of requirements, like the CUDA Toolkit,
 but this is outside the scope of this documentation. You should
-already have compiled both versions of ccminer before you try to
-use MultiMinerManager.
+already have compiled your miners before you try to use MyMiners.
 
 Install
 -------
 
     cd /opt
-    (sudo) git clone https://github.com/grout181/mmm-agent.git
-    Add /opt/mmm-agent/bin to your $PATH
+    sudo git clone https://github.com/myminers/mmm-agent.git
+    sudo cp mmm-agent/bin/mmm-agent.service /etc/systemd/system/mmm-agent.service
+    sudo vi /etc/systemd/system/mmm-agent.service
+    # Under 'User', set the system user you want to run the agent
+    # Under 'ExecStart', set '/opt/mmm-agent/bin/mmm-agent --email <your account> --token <your api token>
+    sudo systemctl enable mmm-agent
+    sudo systemctl start mmm-agent
 
 Update
 ------
@@ -61,12 +64,13 @@ The 'master' branch is the only one considered stable. Use other
 branches at your own risks.
 
     cd /opt
-    (sudo) git pull
+    sudo git pull
+    sudo systemctl restart mmm-agent
 
 Author
 ------
 
-Original author: MultiMinerManager
+Original author: MyMiners
 
 Contributors:
 

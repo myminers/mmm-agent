@@ -13,7 +13,7 @@ class MmmAgent::Optparse
     # The options specified on the command line will be collected in *options*.
     # We set default values here.
     options = OpenStruct.new
-    options.server_url = "https://www.multiminermanager.com"
+    options.server_url = "https://myminers.net/"
     options.hostname = Socket.gethostname
     options.disable_ssl = false
 
@@ -39,7 +39,7 @@ class MmmAgent::Optparse
       opts.separator "Options:"
 
       opts.on("-s", "--server SERVER",
-              "Defaults to https://www.multiminermanager.com") do |server|
+              "Defaults to https://myminers.net/") do |server|
         options.server_url = server
       end
       

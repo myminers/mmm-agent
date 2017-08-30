@@ -10,8 +10,8 @@ task 'gem:release' => 'test:run'
 
 Bones {
   name     'mmm-agent'
-  authors  'MultiMinerManager'
-  email    'contact@multiminermanager.com'
-  url      'https://www.multiminermanager.com'
+  authors  'MyMiners'
+  email    'contact@myminers.net'
+  url      'https://myminers.net'
 }
 
