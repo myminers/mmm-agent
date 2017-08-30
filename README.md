@@ -36,10 +36,8 @@ Requirements
 ------------
 
 * Ruby 2.0 or higher
-* ccminer-sp and ccminer-djm accessible in the PATH (DJM's will
-be used for neoscrypt)
-* nvidia-smi (gives the power consumption information that we 
-need to calculate your most profitable mining option)
+* nvidia-smi (gives the power consumption information that we need to calculate your most profitable mining option)
+* Your miners compiled, accessible to the user running the agent, and named according to https://myminers.net/miner_releases
 
 Miners have their own set of requirements, like the CUDA Toolkit,
 but this is outside the scope of this documentation. You should
@@ -81,7 +79,7 @@ License
 
 (The MIT License)
 
-Copyright (c) 2015 (grout181)
+Copyright (c) 2017 (MyMiners)
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
